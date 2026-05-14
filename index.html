@@ -1,0 +1,283 @@
+
+<h2 class="sr-only">iPhoneセンサーリアルタイムモニター：加速度・ジャイロ・コンパス・GPS表示</h2>
+
+<style>
+.sensor-card {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 12px;
+}
+.sensor-title {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sensor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.axis-box {
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 8px;
+  text-align: center;
+}
+.axis-label {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+.axis-val {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+.status-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--border-radius-md);
+  margin-left: auto;
+}
+.badge-ok { background: var(--color-background-success); color: var(--color-text-success); }
+.badge-ng { background: var(--color-background-danger); color: var(--color-text-danger); }
+.badge-wait { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+.perm-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+}
+.gps-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.gps-row:last-child { border-bottom: none; }
+.gps-key { color: var(--color-text-secondary); }
+.gps-val { font-weight: 500; color: var(--color-text-primary); }
+.visual-bar {
+  height: 4px;
+  background: var(--color-border-tertiary);
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.visual-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.1s ease;
+}
+</style>
+
+<div style="padding: 1rem 0;">
+
+<button class="perm-btn" id="permBtn" onclick="requestPerms()">
+  <i class="ti ti-lock-open" aria-hidden="true"></i> センサー使用を許可する（iPhone必須）
+</button>
+
+<div class="sensor-card">
+  <div class="sensor-title">
+    <i class="ti ti-arrows-move" aria-hidden="true"></i>
+    加速度センサー
+    <span class="status-badge badge-wait" id="accelStatus">待機中</span>
+  </div>
+  <div class="sensor-grid">
+    <div class="axis-box">
+      <div class="axis-label">X（左右）</div>
+      <div class="axis-val" id="ax">—</div>
+      <div class="visual-bar"><div class="visual-fill" id="axBar" style="width:50%; background:#378ADD;"></div></div>
+    </div>
+    <div class="axis-box">
+      <div class="axis-label">Y（前後）</div>
+      <div class="axis-val" id="ay">—</div>
+      <div class="visual-bar"><div class="visual-fill" id="ayBar" style="width:50%; background:#1D9E75;"></div></div>
+    </div>
+    <div class="axis-box">
+      <div class="axis-label">Z（上下）</div>
+      <div class="axis-val" id="az">—</div>
+      <div class="visual-bar"><div class="visual-fill" id="azBar" style="width:50%; background:#D4537E;"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="sensor-card">
+  <div class="sensor-title">
+    <i class="ti ti-rotate-clockwise" aria-hidden="true"></i>
+    ジャイロスコープ
+    <span class="status-badge badge-wait" id="gyroStatus">待機中</span>
+  </div>
+  <div class="sensor-grid">
+    <div class="axis-box">
+      <div class="axis-label">α（Z軸）</div>
+      <div class="axis-val" id="ga">—</div>
+    </div>
+    <div class="axis-box">
+      <div class="axis-label">β（X軸）</div>
+      <div class="axis-val" id="gb">—</div>
+    </div>
+    <div class="axis-box">
+      <div class="axis-label">γ（Y軸）</div>
+      <div class="axis-val" id="gg">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="sensor-card">
+  <div class="sensor-title">
+    <i class="ti ti-compass" aria-hidden="true"></i>
+    コンパス（方位）
+    <span class="status-badge badge-wait" id="compassStatus">待機中</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <div style="position:relative; width:64px; height:64px; flex-shrink:0;">
+      <svg viewBox="0 0 64 64" width="64" height="64">
+        <circle cx="32" cy="32" r="30" fill="none" stroke="var(--color-border-secondary)" stroke-width="1"/>
+        <text x="32" y="10" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">N</text>
+        <text x="32" y="59" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">S</text>
+        <text x="8" y="35" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">W</text>
+        <text x="57" y="35" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">E</text>
+        <g id="needle" transform="rotate(0, 32, 32)">
+          <polygon points="32,6 29,32 35,32" fill="#E24B4A"/>
+          <polygon points="32,58 29,32 35,32" fill="var(--color-text-tertiary)"/>
+        </g>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size:28px; font-weight:500;" id="heading">—°</div>
+      <div style="font-size:13px; color:var(--color-text-secondary);" id="direction">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="sensor-card">
+  <div class="sensor-title">
+    <i class="ti ti-map-pin" aria-hidden="true"></i>
+    GPS位置情報
+    <span class="status-badge badge-wait" id="gpsStatus">待機中</span>
+  </div>
+  <div id="gpsData">
+    <div class="gps-row"><span class="gps-key">緯度</span><span class="gps-val" id="lat">—</span></div>
+    <div class="gps-row"><span class="gps-key">経度</span><span class="gps-val" id="lng">—</span></div>
+    <div class="gps-row"><span class="gps-key">精度</span><span class="gps-val" id="acc">—</span></div>
+    <div class="gps-row"><span class="gps-key">高度</span><span class="gps-val" id="alt">—</span></div>
+  </div>
+  <button onclick="getGPS()" style="margin-top:10px; width:100%; padding:8px; font-size:13px; border-radius:var(--border-radius-md); cursor:pointer;">
+    <i class="ti ti-current-location" aria-hidden="true"></i> 現在地を取得
+  </button>
+</div>
+
+</div>
+
+<script>
+let permsGranted = false;
+
+function toDir(deg) {
+  const dirs = ['北','北北東','北東','東北東','東','東南東','南東','南南東','南','南南西','南西','西南西','西','西北西','北西','北北西'];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+
+function setStatus(id, ok) {
+  const el = document.getElementById(id);
+  el.textContent = ok ? '取得中' : 'エラー';
+  el.className = 'status-badge ' + (ok ? 'badge-ok' : 'badge-ng');
+}
+
+function barWidth(val, min, max) {
+  const pct = ((val - min) / (max - min)) * 100;
+  return Math.min(100, Math.max(0, pct)).toFixed(1) + '%';
+}
+
+function startMotion() {
+  if (!window.DeviceMotionEvent) return;
+  window.addEventListener('devicemotion', e => {
+    const a = e.accelerationIncludingGravity;
+    if (!a) return;
+    setStatus('accelStatus', true);
+    const x = (a.x || 0).toFixed(2), y = (a.y || 0).toFixed(2), z = (a.z || 0).toFixed(2);
+    document.getElementById('ax').textContent = x;
+    document.getElementById('ay').textContent = y;
+    document.getElementById('az').textContent = z;
+    document.getElementById('axBar').style.width = barWidth(parseFloat(x), -10, 10);
+    document.getElementById('ayBar').style.width = barWidth(parseFloat(y), -10, 10);
+    document.getElementById('azBar').style.width = barWidth(parseFloat(z), -10, 10);
+  });
+}
+
+function startOrientation() {
+  if (!window.DeviceOrientationEvent) return;
+  window.addEventListener('deviceorientation', e => {
+    if (e.alpha !== null) {
+      setStatus('gyroStatus', true);
+      document.getElementById('ga').textContent = (e.alpha || 0).toFixed(1) + '°';
+      document.getElementById('gb').textContent = (e.beta || 0).toFixed(1) + '°';
+      document.getElementById('gg').textContent = (e.gamma || 0).toFixed(1) + '°';
+    }
+    const heading = e.webkitCompassHeading != null ? e.webkitCompassHeading : e.alpha;
+    if (heading !== null && heading !== undefined) {
+      setStatus('compassStatus', true);
+      const h = Math.round(heading);
+      document.getElementById('heading').textContent = h + '°';
+      document.getElementById('direction').textContent = toDir(h);
+      document.getElementById('needle').setAttribute('transform', `rotate(${h}, 32, 32)`);
+    }
+  });
+}
+
+async function requestPerms() {
+  const btn = document.getElementById('permBtn');
+  try {
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      const r1 = await DeviceMotionEvent.requestPermission();
+      const r2 = await DeviceOrientationEvent.requestPermission();
+      if (r1 === 'granted' && r2 === 'granted') {
+        btn.textContent = '✓ 許可済み';
+        btn.disabled = true;
+        startMotion();
+        startOrientation();
+      } else {
+        btn.textContent = '許可が拒否されました';
+      }
+    } else {
+      btn.textContent = '✓ 自動取得中（Android/PC）';
+      btn.disabled = true;
+      startMotion();
+      startOrientation();
+    }
+  } catch(err) {
+    btn.textContent = 'エラー: ' + err.message;
+  }
+}
+
+function getGPS() {
+  if (!navigator.geolocation) {
+    document.getElementById('gpsStatus').textContent = '非対応';
+    return;
+  }
+  document.getElementById('gpsStatus').textContent = '取得中...';
+  document.getElementById('gpsStatus').className = 'status-badge badge-wait';
+  navigator.geolocation.getCurrentPosition(pos => {
+    setStatus('gpsStatus', true);
+    document.getElementById('lat').textContent = pos.coords.latitude.toFixed(6) + '°';
+    document.getElementById('lng').textContent = pos.coords.longitude.toFixed(6) + '°';
+    document.getElementById('acc').textContent = Math.round(pos.coords.accuracy) + ' m';
+    document.getElementById('alt').textContent = pos.coords.altitude ? pos.coords.altitude.toFixed(1) + ' m' : '—';
+  }, err => {
+    setStatus('gpsStatus', false);
+    document.getElementById('lat').textContent = '取得失敗: ' + err.message;
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+startMotion();
+startOrientation();
+</script>
