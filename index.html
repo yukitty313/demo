@@ -1,283 +1,282 @@
-
-<h2 class="sr-only">iPhoneセンサーリアルタイムモニター：加速度・ジャイロ・コンパス・GPS表示</h2>
-
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>迷路ゲーム</title>
 <style>
-.sensor-card {
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
-  border-radius: var(--border-radius-lg);
-  padding: 1rem 1.25rem;
-  margin-bottom: 12px;
-}
-.sensor-title {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  margin: 0 0 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.sensor-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-.axis-box {
-  background: var(--color-background-secondary);
-  border-radius: var(--border-radius-md);
-  padding: 8px;
-  text-align: center;
-}
-.axis-label {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-  margin-bottom: 4px;
-}
-.axis-val {
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-.status-badge {
-  display: inline-block;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: var(--border-radius-md);
-  margin-left: auto;
-}
-.badge-ok { background: var(--color-background-success); color: var(--color-text-success); }
-.badge-ng { background: var(--color-background-danger); color: var(--color-text-danger); }
-.badge-wait { background: var(--color-background-secondary); color: var(--color-text-secondary); }
-.perm-btn {
-  width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  margin-bottom: 12px;
-  border-radius: var(--border-radius-md);
-  cursor: pointer;
-}
-.gps-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  padding: 4px 0;
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-}
-.gps-row:last-child { border-bottom: none; }
-.gps-key { color: var(--color-text-secondary); }
-.gps-val { font-weight: 500; color: var(--color-text-primary); }
-.visual-bar {
-  height: 4px;
-  background: var(--color-border-tertiary);
-  border-radius: 2px;
-  margin-top: 4px;
-  overflow: hidden;
-}
-.visual-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.1s ease;
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d0d14;
+    color: #e8e8f0;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow: hidden;
+  }
+  h1 { font-size: 11px; letter-spacing: 0.3em; color: #5a5a8a; text-transform: uppercase; margin-bottom: 16px; }
+  #hud { display: flex; justify-content: space-between; width: 340px; margin-bottom: 10px; font-size: 12px; letter-spacing: 0.1em; color: #5a5a8a; }
+  #hud .val { color: #a0a0d0; font-weight: bold; }
+  #lvBadge { background: #1a1a2e; border: 1px solid #2a2a4a; padding: 3px 12px; border-radius: 4px; font-size: 11px; letter-spacing: 0.2em; color: #6060a0; }
+  canvas { display: block; border: 1px solid #2a2a4a; border-radius: 4px; }
+  #msg { margin-top: 12px; font-size: 12px; letter-spacing: 0.05em; color: #5a5a8a; min-height: 18px; text-align: center; }
+  #msg.clear { color: #3a9a7a; }
+  button { margin-top: 14px; padding: 10px 36px; font-family: 'Courier New', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; background: transparent; color: #7070b0; border: 1px solid #2a2a4a; border-radius: 4px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+  button:hover { border-color: #5050a0; color: #a0a0d0; }
+  #pcHint { margin-top: 10px; font-size: 10px; letter-spacing: 0.1em; color: #3a3a5a; }
 </style>
+</head>
+<body>
 
-<div style="padding: 1rem 0;">
-
-<button class="perm-btn" id="permBtn" onclick="requestPerms()">
-  <i class="ti ti-lock-open" aria-hidden="true"></i> センサー使用を許可する（iPhone必須）
-</button>
-
-<div class="sensor-card">
-  <div class="sensor-title">
-    <i class="ti ti-arrows-move" aria-hidden="true"></i>
-    加速度センサー
-    <span class="status-badge badge-wait" id="accelStatus">待機中</span>
-  </div>
-  <div class="sensor-grid">
-    <div class="axis-box">
-      <div class="axis-label">X（左右）</div>
-      <div class="axis-val" id="ax">—</div>
-      <div class="visual-bar"><div class="visual-fill" id="axBar" style="width:50%; background:#378ADD;"></div></div>
-    </div>
-    <div class="axis-box">
-      <div class="axis-label">Y（前後）</div>
-      <div class="axis-val" id="ay">—</div>
-      <div class="visual-bar"><div class="visual-fill" id="ayBar" style="width:50%; background:#1D9E75;"></div></div>
-    </div>
-    <div class="axis-box">
-      <div class="axis-label">Z（上下）</div>
-      <div class="axis-val" id="az">—</div>
-      <div class="visual-bar"><div class="visual-fill" id="azBar" style="width:50%; background:#D4537E;"></div></div>
-    </div>
-  </div>
+<h1>Maze Tilt</h1>
+<div id="hud">
+  <div>TIME <span class="val" id="timerDisp">0.0</span>s</div>
+  <div id="lvBadge">LV <span id="lvDisp">1</span></div>
+  <div>BEST <span class="val" id="bestDisp">—</span>s</div>
 </div>
-
-<div class="sensor-card">
-  <div class="sensor-title">
-    <i class="ti ti-rotate-clockwise" aria-hidden="true"></i>
-    ジャイロスコープ
-    <span class="status-badge badge-wait" id="gyroStatus">待機中</span>
-  </div>
-  <div class="sensor-grid">
-    <div class="axis-box">
-      <div class="axis-label">α（Z軸）</div>
-      <div class="axis-val" id="ga">—</div>
-    </div>
-    <div class="axis-box">
-      <div class="axis-label">β（X軸）</div>
-      <div class="axis-val" id="gb">—</div>
-    </div>
-    <div class="axis-box">
-      <div class="axis-label">γ（Y軸）</div>
-      <div class="axis-val" id="gg">—</div>
-    </div>
-  </div>
-</div>
-
-<div class="sensor-card">
-  <div class="sensor-title">
-    <i class="ti ti-compass" aria-hidden="true"></i>
-    コンパス（方位）
-    <span class="status-badge badge-wait" id="compassStatus">待機中</span>
-  </div>
-  <div style="display:flex; align-items:center; gap:16px;">
-    <div style="position:relative; width:64px; height:64px; flex-shrink:0;">
-      <svg viewBox="0 0 64 64" width="64" height="64">
-        <circle cx="32" cy="32" r="30" fill="none" stroke="var(--color-border-secondary)" stroke-width="1"/>
-        <text x="32" y="10" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">N</text>
-        <text x="32" y="59" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">S</text>
-        <text x="8" y="35" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">W</text>
-        <text x="57" y="35" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">E</text>
-        <g id="needle" transform="rotate(0, 32, 32)">
-          <polygon points="32,6 29,32 35,32" fill="#E24B4A"/>
-          <polygon points="32,58 29,32 35,32" fill="var(--color-text-tertiary)"/>
-        </g>
-      </svg>
-    </div>
-    <div>
-      <div style="font-size:28px; font-weight:500;" id="heading">—°</div>
-      <div style="font-size:13px; color:var(--color-text-secondary);" id="direction">—</div>
-    </div>
-  </div>
-</div>
-
-<div class="sensor-card">
-  <div class="sensor-title">
-    <i class="ti ti-map-pin" aria-hidden="true"></i>
-    GPS位置情報
-    <span class="status-badge badge-wait" id="gpsStatus">待機中</span>
-  </div>
-  <div id="gpsData">
-    <div class="gps-row"><span class="gps-key">緯度</span><span class="gps-val" id="lat">—</span></div>
-    <div class="gps-row"><span class="gps-key">経度</span><span class="gps-val" id="lng">—</span></div>
-    <div class="gps-row"><span class="gps-key">精度</span><span class="gps-val" id="acc">—</span></div>
-    <div class="gps-row"><span class="gps-key">高度</span><span class="gps-val" id="alt">—</span></div>
-  </div>
-  <button onclick="getGPS()" style="margin-top:10px; width:100%; padding:8px; font-size:13px; border-radius:var(--border-radius-md); cursor:pointer;">
-    <i class="ti ti-current-location" aria-hidden="true"></i> 現在地を取得
-  </button>
-</div>
-
-</div>
+<canvas id="c" width="340" height="340"></canvas>
+<div id="msg">STARTを押して端末を傾けてください</div>
+<button id="startBtn">START</button>
+<div id="pcHint">PC: 矢印キーで操作</div>
 
 <script>
-let permsGranted = false;
+const CV = document.getElementById('c');
+const ctx = CV.getContext('2d');
+const W = 340, H = 340, CELL = 20;
 
-function toDir(deg) {
-  const dirs = ['北','北北東','北東','東北東','東','東南東','南東','南南東','南','南南西','南西','西南西','西','西北西','北西','北北西'];
-  return dirs[Math.round(deg / 22.5) % 16];
-}
+let ball, vx, vy, walls, goal, running = false, startTime, animId;
+let level = 1, best = {};
+let tiltX = 0, tiltY = 0;
+let permGranted = false;
 
-function setStatus(id, ok) {
-  const el = document.getElementById(id);
-  el.textContent = ok ? '取得中' : 'エラー';
-  el.className = 'status-badge ' + (ok ? 'badge-ok' : 'badge-ng');
-}
+const MAZES = [
+  [
+    "#################",
+    "#S  #    #      #",
+    "# # # ## # #### #",
+    "# # #  # #    # #",
+    "# ### ## ##### ##",
+    "#   #  #   #    #",
+    "### # ## # # ## #",
+    "#   #    # #    #",
+    "# ####### # ### #",
+    "#   #   # #     #",
+    "### # # # ##### #",
+    "#   # # #     # #",
+    "# ### ####### # #",
+    "#     #     # # #",
+    "##### # ### # # #",
+    "#       #     #G#",
+    "#################",
+  ],
+  [
+    "#################",
+    "#S# #       #   #",
+    "# # # ##### # # #",
+    "#   #   #   # # #",
+    "####### # ### # #",
+    "#   #   #   # # #",
+    "# # # ##### # # #",
+    "# # #   #   # # #",
+    "# # ### # ### # #",
+    "# #   # #   # # #",
+    "# ### # ### # # #",
+    "#   # #   # # # #",
+    "### # ### # # # #",
+    "#   #   # # #   #",
+    "# ##### # # ### #",
+    "#       #     #G#",
+    "#################",
+  ],
+  [
+    "#################",
+    "#S    #   #     #",
+    "##### # # # ### #",
+    "#     # # # #   #",
+    "# ##### # # # ###",
+    "#   #   # #   # #",
+    "### # ### ##### #",
+    "#   #   #   #   #",
+    "# ##### # # # ###",
+    "# #   # # # #   #",
+    "# # # # # # ### #",
+    "# # # # # #   # #",
+    "# # # # # ### # #",
+    "# # # #   #   # #",
+    "# # # ##### ### #",
+    "#   #         #G#",
+    "#################",
+  ]
+];
 
-function barWidth(val, min, max) {
-  const pct = ((val - min) / (max - min)) * 100;
-  return Math.min(100, Math.max(0, pct)).toFixed(1) + '%';
-}
-
-function startMotion() {
-  if (!window.DeviceMotionEvent) return;
-  window.addEventListener('devicemotion', e => {
-    const a = e.accelerationIncludingGravity;
-    if (!a) return;
-    setStatus('accelStatus', true);
-    const x = (a.x || 0).toFixed(2), y = (a.y || 0).toFixed(2), z = (a.z || 0).toFixed(2);
-    document.getElementById('ax').textContent = x;
-    document.getElementById('ay').textContent = y;
-    document.getElementById('az').textContent = z;
-    document.getElementById('axBar').style.width = barWidth(parseFloat(x), -10, 10);
-    document.getElementById('ayBar').style.width = barWidth(parseFloat(y), -10, 10);
-    document.getElementById('azBar').style.width = barWidth(parseFloat(z), -10, 10);
-  });
-}
-
-function startOrientation() {
-  if (!window.DeviceOrientationEvent) return;
-  window.addEventListener('deviceorientation', e => {
-    if (e.alpha !== null) {
-      setStatus('gyroStatus', true);
-      document.getElementById('ga').textContent = (e.alpha || 0).toFixed(1) + '°';
-      document.getElementById('gb').textContent = (e.beta || 0).toFixed(1) + '°';
-      document.getElementById('gg').textContent = (e.gamma || 0).toFixed(1) + '°';
+function parseMaze(maze) {
+  const w = [], s = {x: CELL + CELL/2, y: CELL + CELL/2}, g = {x: W - CELL/2, y: H - CELL/2};
+  for (let r = 0; r < maze.length; r++) {
+    for (let c = 0; c < maze[r].length; c++) {
+      const ch = maze[r][c];
+      if (ch === '#') w.push({ x: c * CELL, y: r * CELL });
+      if (ch === 'S') { s.x = c * CELL + CELL / 2; s.y = r * CELL + CELL / 2; }
+      if (ch === 'G') { g.x = c * CELL + CELL / 2; g.y = r * CELL + CELL / 2; }
     }
-    const heading = e.webkitCompassHeading != null ? e.webkitCompassHeading : e.alpha;
-    if (heading !== null && heading !== undefined) {
-      setStatus('compassStatus', true);
-      const h = Math.round(heading);
-      document.getElementById('heading').textContent = h + '°';
-      document.getElementById('direction').textContent = toDir(h);
-      document.getElementById('needle').setAttribute('transform', `rotate(${h}, 32, 32)`);
-    }
-  });
-}
-
-async function requestPerms() {
-  const btn = document.getElementById('permBtn');
-  try {
-    if (typeof DeviceMotionEvent.requestPermission === 'function') {
-      const r1 = await DeviceMotionEvent.requestPermission();
-      const r2 = await DeviceOrientationEvent.requestPermission();
-      if (r1 === 'granted' && r2 === 'granted') {
-        btn.textContent = '✓ 許可済み';
-        btn.disabled = true;
-        startMotion();
-        startOrientation();
-      } else {
-        btn.textContent = '許可が拒否されました';
-      }
-    } else {
-      btn.textContent = '✓ 自動取得中（Android/PC）';
-      btn.disabled = true;
-      startMotion();
-      startOrientation();
-    }
-  } catch(err) {
-    btn.textContent = 'エラー: ' + err.message;
   }
+  return { w, s, g };
 }
 
-function getGPS() {
-  if (!navigator.geolocation) {
-    document.getElementById('gpsStatus').textContent = '非対応';
+function drawFrame() {
+  ctx.fillStyle = '#0d0d14';
+  ctx.fillRect(0, 0, W, H);
+
+  if (!walls || !ball || !goal) return;
+
+  walls.forEach(w => {
+    ctx.fillStyle = '#1e1e30';
+    ctx.fillRect(w.x, w.y, CELL, CELL);
+    ctx.strokeStyle = '#2a2a45';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(w.x + 0.5, w.y + 0.5, CELL - 1, CELL - 1);
+  });
+
+  ctx.fillStyle = '#1a5a45';
+  ctx.beginPath();
+  ctx.arc(goal.x, goal.y, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#3a9a7a';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = '#3a9a7a';
+  ctx.font = 'bold 7px Courier New';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('GOAL', goal.x, goal.y);
+
+  ctx.fillStyle = '#3060b0';
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, 7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#5090e0';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function collides(nx, ny, r) {
+  for (const w of walls) {
+    const cx = Math.max(w.x, Math.min(nx, w.x + CELL));
+    const cy = Math.max(w.y, Math.min(ny, w.y + CELL));
+    const dx = nx - cx, dy = ny - cy;
+    if (dx * dx + dy * dy < r * r) return true;
+  }
+  return false;
+}
+
+function loop() {
+  if (!running) return;
+  const GRAVITY = 0.18, FRICTION = 0.88, R = 7;
+
+  vx = (vx + tiltX * GRAVITY) * FRICTION;
+  vy = (vy + tiltY * GRAVITY) * FRICTION;
+
+  let nx = ball.x + vx;
+  let ny = ball.y + vy;
+
+  if (collides(nx, ball.y, R)) { vx *= -0.3; nx = ball.x; }
+  if (collides(ball.x, ny, R)) { vy *= -0.3; ny = ball.y; }
+
+  nx = Math.max(R, Math.min(W - R, nx));
+  ny = Math.max(R, Math.min(H - R, ny));
+
+  ball.x = nx;
+  ball.y = ny;
+
+  const dx = ball.x - goal.x, dy = ball.y - goal.y;
+  if (dx * dx + dy * dy < 14 * 14) {
+    running = false;
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    if (!best[level] || parseFloat(elapsed) < parseFloat(best[level])) best[level] = elapsed;
+    document.getElementById('bestDisp').textContent = best[level];
+    const msg = document.getElementById('msg');
+    msg.textContent = 'クリア！ ' + elapsed + '秒 → 次のレベルへ';
+    msg.className = 'clear';
+    const btn = document.getElementById('startBtn');
+    btn.textContent = 'NEXT LV';
+    btn.onclick = function() { level++; document.getElementById('lvDisp').textContent = level; startGame(); };
+    drawFrame();
     return;
   }
-  document.getElementById('gpsStatus').textContent = '取得中...';
-  document.getElementById('gpsStatus').className = 'status-badge badge-wait';
-  navigator.geolocation.getCurrentPosition(pos => {
-    setStatus('gpsStatus', true);
-    document.getElementById('lat').textContent = pos.coords.latitude.toFixed(6) + '°';
-    document.getElementById('lng').textContent = pos.coords.longitude.toFixed(6) + '°';
-    document.getElementById('acc').textContent = Math.round(pos.coords.accuracy) + ' m';
-    document.getElementById('alt').textContent = pos.coords.altitude ? pos.coords.altitude.toFixed(1) + ' m' : '—';
-  }, err => {
-    setStatus('gpsStatus', false);
-    document.getElementById('lat').textContent = '取得失敗: ' + err.message;
-  }, { enableHighAccuracy: true, timeout: 10000 });
+
+  document.getElementById('timerDisp').textContent = ((Date.now() - startTime) / 1000).toFixed(1);
+  drawFrame();
+  animId = requestAnimationFrame(loop);
 }
 
-startMotion();
-startOrientation();
+async function startGame() {
+  if (animId) cancelAnimationFrame(animId);
+  running = false;
+
+  const maze = MAZES[(level - 1) % MAZES.length];
+  const parsed = parseMaze(maze);
+  walls = parsed.w;
+  ball = { x: parsed.s.x, y: parsed.s.y };
+  goal = { x: parsed.g.x, y: parsed.g.y };
+  vx = 0; vy = 0;
+
+  const msg = document.getElementById('msg');
+  msg.textContent = '端末を傾けてボールを転がしてください';
+  msg.className = '';
+  const btn = document.getElementById('startBtn');
+  btn.textContent = 'RESTART';
+  btn.onclick = startGame;
+  document.getElementById('lvDisp').textContent = level;
+  document.getElementById('timerDisp').textContent = '0.0';
+
+  if (!permGranted) {
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === 'granted') permGranted = true;
+      } catch(e) {}
+    } else {
+      permGranted = true;
+    }
+  }
+
+  running = true;
+  startTime = Date.now();
+  drawFrame();
+  animId = requestAnimationFrame(loop);
+}
+
+window.addEventListener('deviceorientation', function(e) {
+  if (!running) return;
+  tiltX = Math.max(-1, Math.min(1, (e.gamma || 0) / 30));
+  tiltY = Math.max(-1, Math.min(1, ((e.beta || 45) - 45) / 30));
+});
+
+document.addEventListener('keydown', function(e) {
+  if (!running) return;
+  var s = 0.7;
+  if (e.key === 'ArrowLeft')  { tiltX = -s; e.preventDefault(); }
+  if (e.key === 'ArrowRight') { tiltX =  s; e.preventDefault(); }
+  if (e.key === 'ArrowUp')    { tiltY = -s; e.preventDefault(); }
+  if (e.key === 'ArrowDown')  { tiltY =  s; e.preventDefault(); }
+});
+document.addEventListener('keyup', function(e) {
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(e.key) >= 0) {
+    tiltX = 0; tiltY = 0;
+  }
+});
+
+document.getElementById('startBtn').onclick = startGame;
+
+var initParsed = parseMaze(MAZES[0]);
+walls = initParsed.w;
+ball = { x: initParsed.s.x, y: initParsed.s.y };
+goal = { x: initParsed.g.x, y: initParsed.g.y };
+drawFrame();
 </script>
+</body>
+</html>
