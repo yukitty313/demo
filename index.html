@@ -524,7 +524,6 @@ function jumpMonth(m){ calYear=S.year; calMonth=m; showTab('cal'); }
 
 /* ===================== iOS PICKER ===================== */
 const ITEM_H = 44;
-const VISIBLE = 5;
 const HOURS = Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
 const MINS  = ['00','15','30','45'];
 
@@ -536,112 +535,148 @@ function buildPicker(listId, colId, items, initVal){
   if(!listEl || !colEl) return;
 
   listEl.innerHTML = '';
-
-  // pad items × 3 for infinite-feel scroll
-  const allItems = [...items, ...items, ...items];
-  allItems.forEach(v => {
-    const div = document.createElement('div');
-    div.className = 'drum-list-item';
-    div.textContent = v;
-    listEl.appendChild(div);
-  });
-
   const n = items.length;
+
+  // 3 copies for wraparound feel
+  const copies = 3;
+  for(let c=0; c<copies; c++){
+    items.forEach(v => {
+      const div = document.createElement('div');
+      div.className = 'drum-list-item';
+      div.textContent = v;
+      listEl.appendChild(div);
+    });
+  }
+
   let initIdx = items.indexOf(initVal);
   if(initIdx < 0) initIdx = 0;
 
-  // offset so that index 0 of middle-copy aligns with center
-  // center row = row index 2 (0-based)
-  // translateY for idx i (in middle copy): -(n + i)*ITEM_H + 2*ITEM_H
-  function getY(idx){
-    return -((n + idx) * ITEM_H) + 2 * ITEM_H;
-  }
+  // y=0 means top of list. Center row (index 2) shows selected item.
+  // Position: translateY = -(n + curIdx)*ITEM_H + 2*ITEM_H
+  function idxToY(idx){ return -((n + idx) * ITEM_H) + 2 * ITEM_H; }
+  function yToIdx(y){ return ((Math.round((-y + 2*ITEM_H) / ITEM_H) - n) % n + n) % n; }
 
-  let curIdx = initIdx;
-  let currentY = getY(curIdx);
-  listEl.style.transform = `translateY(${currentY}px)`;
-  listEl.style.transition = 'none';
-
-  function snapToIdx(idx, animate){
-    idx = ((idx % n) + n) % n;
-    curIdx = idx;
-    currentY = getY(idx);
-    listEl.style.transition = animate ? 'transform 0.25s cubic-bezier(.4,0,.2,1)' : 'none';
-    listEl.style.transform = `translateY(${currentY}px)`;
-    updateSelectedStyle();
-  }
-
-  function updateSelectedStyle(){
-    const allDivs = listEl.querySelectorAll('.drum-list-item');
-    allDivs.forEach((el, k) => {
-      const isSelected = (k % n) === curIdx;
-      el.style.color = isSelected ? '#1c2a5e' : '#8496c8';
-      el.style.fontSize = isSelected ? '22px' : '15px';
-      el.style.fontWeight = isSelected ? '700' : '400';
-    });
-  }
-  updateSelectedStyle();
-
-  // drag handling
-  let dragStartY = 0;
-  let dragStartIdx = 0;
+  let posY = idxToY(initIdx); // current pixel position
+  let velY = 0;               // pixels/ms
+  let rafId = null;
   let isDragging = false;
-  let velocity = 0;
-  let lastY = 0;
-  let lastT = 0;
 
-  function onStart(clientY){
-    isDragging = true;
-    dragStartY = clientY;
-    dragStartIdx = curIdx;
-    lastY = clientY;
-    lastT = Date.now();
-    velocity = 0;
-    listEl.style.transition = 'none';
-  }
-  function onMove(clientY){
-    if(!isDragging) return;
-    const dy = dragStartY - clientY;
-    const now = Date.now();
-    velocity = (clientY - lastY) / (now - lastT + 1);
-    lastY = clientY; lastT = now;
-    const rawIdx = dragStartIdx + dy / ITEM_H;
-    const idx = ((Math.round(rawIdx) % n) + n) % n;
-    const liveY = getY(dragStartIdx) - dy;
-    listEl.style.transform = `translateY(${liveY}px)`;
-    // update style live
-    const allDivs = listEl.querySelectorAll('.drum-list-item');
-    allDivs.forEach((el,k)=>{
-      const isSelected = (k % n) === idx;
-      el.style.color = isSelected ? '#1c2a5e' : '#8496c8';
-      el.style.fontSize = isSelected ? '22px' : '15px';
-      el.style.fontWeight = isSelected ? '700' : '400';
+  function updateDOM(){
+    listEl.style.transform = `translateY(${posY}px)`;
+    const ci = yToIdx(posY);
+    listEl.querySelectorAll('.drum-list-item').forEach((el, k) => {
+      const sel = (k % n) === ci;
+      el.style.color      = sel ? '#1c2a5e' : '#8496c8';
+      el.style.fontSize   = sel ? '22px'    : '15px';
+      el.style.fontWeight = sel ? '700'     : '400';
     });
-    curIdx = idx;
   }
-  function onEnd(){
+
+  function snapNearest(){
+    const ci = yToIdx(posY);
+    return idxToY(ci);
+  }
+
+  function physicsLoop(){
+    if(isDragging){ rafId = requestAnimationFrame(physicsLoop); return; }
+
+    const target = snapNearest();
+    const dist   = target - posY;
+
+    // spring + friction
+    const spring  = 0.18;
+    const damping = 0.78;
+
+    velY = velY * damping + dist * spring;
+
+    if(Math.abs(velY) < 0.15 && Math.abs(dist) < 0.2){
+      posY = target;
+      velY = 0;
+      updateDOM();
+      rafId = null;
+      return;
+    }
+
+    posY += velY;
+    updateDOM();
+    rafId = requestAnimationFrame(physicsLoop);
+  }
+
+  function startLoop(){
+    if(!rafId) rafId = requestAnimationFrame(physicsLoop);
+  }
+
+  // Initial render
+  listEl.style.transition = 'none';
+  updateDOM();
+
+  // --- Pointer events (mouse + touch unified) ---
+  let dragStartY  = 0;
+  let dragStartPos= 0;
+  let prevY       = 0;
+  let prevT       = 0;
+  let samples     = [];  // [{y,t}] rolling window for velocity
+
+  function pointerStart(clientY){
+    isDragging  = true;
+    dragStartY  = clientY;
+    dragStartPos= posY;
+    prevY = clientY; prevT = performance.now();
+    samples = [{y:clientY, t:performance.now()}];
+    velY = 0;
+    if(!rafId) rafId = requestAnimationFrame(physicsLoop);
+  }
+
+  function pointerMove(clientY){
+    if(!isDragging) return;
+    const dy = clientY - dragStartY;
+    posY = dragStartPos + dy;
+
+    // wrap to keep in middle-copy zone
+    const minY = idxToY(n-1) - ITEM_H*2;
+    const maxY = idxToY(0)   + ITEM_H*2;
+    if(posY < minY) posY = minY;
+    if(posY > maxY) posY = maxY;
+
+    const now = performance.now();
+    samples.push({y:clientY, t:now});
+    // keep last 80ms
+    samples = samples.filter(s => now - s.t < 80);
+    updateDOM();
+  }
+
+  function pointerEnd(){
     if(!isDragging) return;
     isDragging = false;
-    // flick
-    const flickSteps = Math.round(-velocity * 4);
-    const targetIdx = ((curIdx - flickSteps) % n + n) % n;
-    snapToIdx(targetIdx, true);
+
+    // compute velocity from rolling samples
+    if(samples.length >= 2){
+      const first = samples[0];
+      const last  = samples[samples.length-1];
+      const dt    = last.t - first.t;
+      if(dt > 0) velY = (last.y - first.y) / dt * 16; // px per frame @60fps
+    } else {
+      velY = 0;
+    }
+
+    startLoop();
   }
 
-  colEl.addEventListener('mousedown', e=>{ onStart(e.clientY); e.preventDefault(); });
-  document.addEventListener('mousemove', e=>{ if(isDragging) onMove(e.clientY); });
-  document.addEventListener('mouseup', ()=>{ if(isDragging) onEnd(); });
+  colEl.addEventListener('mousedown', e=>{ pointerStart(e.clientY); e.preventDefault(); });
+  document.addEventListener('mousemove', e=>{ if(isDragging) pointerMove(e.clientY); });
+  document.addEventListener('mouseup',   ()=>{ if(isDragging) pointerEnd(); });
 
-  colEl.addEventListener('touchstart', e=>{ onStart(e.touches[0].clientY); }, {passive:true});
-  colEl.addEventListener('touchmove',  e=>{ onMove(e.touches[0].clientY); e.preventDefault(); }, {passive:false});
-  colEl.addEventListener('touchend',   ()=>{ onEnd(); });
+  colEl.addEventListener('touchstart', e=>{ pointerStart(e.touches[0].clientY); }, {passive:true});
+  colEl.addEventListener('touchmove',  e=>{ pointerMove(e.touches[0].clientY); e.preventDefault(); }, {passive:false});
+  colEl.addEventListener('touchend',   ()=>{ pointerEnd(); });
 
   colEl.addEventListener('wheel', e=>{
     e.preventDefault();
-    snapToIdx(curIdx + (e.deltaY>0?1:-1), true);
+    velY += e.deltaY > 0 ? -60 : 60;
+    startLoop();
   }, {passive:false});
 
-  pickerState[listId] = { getValue: () => items[curIdx] };
+  pickerState[listId] = { getValue: () => items[yToIdx(posY)] };
 }
 
 function initPickers(){
@@ -657,46 +692,6 @@ function getPickerTime(hId, mId){
   return `${h}:${m}`;
 }
 
-/* ===================== MODAL ===================== */
-function openModal(key){
-  activeDate = key;
-  const dt = pd(key);
-  const dow = ['日','月','火','水','木','金','土'];
-  document.getElementById('modalTitle').textContent = `${dt.getMonth()+1}月${dt.getDate()}日（${dow[dt.getDay()]}）`;
-  const ss = shiftsOn(key);
-  const ex = document.getElementById('modalExisting');
-  if(ss.length){
-    ex.innerHTML = '<div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:8px;font-family:Nunito,sans-serif">登録済みシフト</div>' +
-      ss.map(s=>`<div class="shift-list-item"><span class="shift-list-time">${s.start}〜${s.end}</span><span class="shift-list-amt">${fm(calcShift(s))}</span><button class="btn btn-danger btn-xs" onclick="removeShift('${s.id}')">削除</button></div>`).join('');
-  } else { ex.innerHTML=''; }
-
-  document.getElementById('m-break').value='60';
-  document.getElementById('m-memo').value='';
-  document.getElementById('overlay').className='overlay open';
-  initPickers();
-}
-function closeModal(){ document.getElementById('overlay').className='overlay'; activeDate=null; }
-function overlayClick(e){ if(e.target===document.getElementById('overlay')) closeModal(); }
-
-function saveShift(){
-  if(!activeDate) return;
-  const start = getPickerTime('pl-sh','pl-sm');
-  const end   = getPickerTime('pl-eh','pl-em');
-  const breakMin = +document.getElementById('m-break').value||0;
-  const memo  = document.getElementById('m-memo').value.trim();
-  S.shifts.push({id:uid(),date:activeDate,start,end,breakMin,memo});
-  save(); closeModal(); renderCal(); renderDash();
-}
-function removeShift(id){
-  S.shifts = S.shifts.filter(s=>s.id!==id);
-  save();
-  if(activeDate) openModal(activeDate);
-  renderCal(); renderDash();
-}
-
-/* ===================== WAGE ===================== */
-function renderWageList(){
-  const el=document.getElementById('wageList');
   if(!S.wages.length){el.innerHTML='<div class="empty-state">時給が設定されていません</div>';return;}
   el.innerHTML=S.wages.sort((a,b)=>(pd(a.start)||0)-(pd(b.start)||0)).map((w,i)=>`
     <div class="wage-item">
