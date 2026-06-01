@@ -2,281 +2,560 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>迷路ゲーム</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>扶養内収入管理</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #0d0d14;
-    color: #e8e8f0;
-    font-family: 'Courier New', monospace;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    overflow: hidden;
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: #e2e0d8;
+    --border2: #cccab8;
+    --text: #1a1a18;
+    --text2: #6b6960;
+    --text3: #9e9c92;
+    --green: #1a7a52;
+    --green-light: #e6f4ed;
+    --green-mid: #5daa82;
+    --amber: #9a6200;
+    --amber-light: #fdf3e0;
+    --red: #b03030;
+    --red-light: #fceaea;
+    --blue: #1a5fa0;
+    --blue-light: #e8f2fc;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 12px rgba(0,0,0,.04);
   }
-  h1 { font-size: 11px; letter-spacing: 0.3em; color: #5a5a8a; text-transform: uppercase; margin-bottom: 16px; }
-  #hud { display: flex; justify-content: space-between; width: 340px; margin-bottom: 10px; font-size: 12px; letter-spacing: 0.1em; color: #5a5a8a; }
-  #hud .val { color: #a0a0d0; font-weight: bold; }
-  #lvBadge { background: #1a1a2e; border: 1px solid #2a2a4a; padding: 3px 12px; border-radius: 4px; font-size: 11px; letter-spacing: 0.2em; color: #6060a0; }
-  canvas { display: block; border: 1px solid #2a2a4a; border-radius: 4px; }
-  #msg { margin-top: 12px; font-size: 12px; letter-spacing: 0.05em; color: #5a5a8a; min-height: 18px; text-align: center; }
-  #msg.clear { color: #3a9a7a; }
-  button { margin-top: 14px; padding: 10px 36px; font-family: 'Courier New', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; background: transparent; color: #7070b0; border: 1px solid #2a2a4a; border-radius: 4px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-  button:hover { border-color: #5050a0; color: #a0a0d0; }
-  #pcHint { margin-top: 10px; font-size: 10px; letter-spacing: 0.1em; color: #3a3a5a; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .header-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .year-badge { font-size: 12px; font-weight: 500; background: var(--green-light); color: var(--green); padding: 4px 12px; border-radius: 20px; font-family: 'DM Mono', monospace; }
+
+  .container { max-width: 760px; margin: 0 auto; padding: 20px 16px 80px; }
+
+  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 20px; box-shadow: var(--shadow); }
+  .tab { flex: 1; padding: 8px 4px; font-size: 13px; font-weight: 500; border: none; border-radius: var(--radius-sm); cursor: pointer; background: transparent; color: var(--text2); font-family: 'Noto Sans JP', sans-serif; transition: all .15s; text-align: center; }
+  .tab.active { background: var(--green); color: #fff; }
+  .tab:hover:not(.active) { background: var(--surface2); color: var(--text); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title svg { width: 16px; height: 16px; color: var(--green); }
+
+  .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+  @media(min-width:520px){ .metric-grid { grid-template-columns: repeat(4, 1fr); } }
+  .metric { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px 14px; }
+  .metric-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; font-weight: 500; }
+  .metric-value { font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text); }
+  .metric-value.ok { color: var(--green); }
+  .metric-value.warn { color: var(--amber); }
+  .metric-value.danger { color: var(--red); }
+
+  .progress-wrap { margin-bottom: 6px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
+  .progress-pct { font-family: 'DM Mono', monospace; font-weight: 700; font-size: 15px; }
+  .pbar { height: 10px; background: var(--surface2); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+  .pfill { height: 100%; border-radius: 5px; transition: width .4s ease; }
+  .pfill.ok { background: var(--green); }
+  .pfill.warn { background: #d4900a; }
+  .pfill.danger { background: var(--red); }
+  .progress-footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-top: 5px; font-family: 'DM Mono', monospace; }
+
+  .alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 14px; font-weight: 500; border-left: 3px solid; }
+  .alert.warn { background: var(--amber-light); color: var(--amber); border-color: #d4900a; }
+  .alert.danger { background: var(--red-light); color: var(--red); border-color: var(--red); }
+  .alert.ok { background: var(--green-light); color: var(--green); border-color: var(--green); }
+
+  .month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  @media(min-width:480px){ .month-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media(min-width:640px){ .month-grid { grid-template-columns: repeat(6, 1fr); } }
+  .month-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 10px 8px; cursor: pointer; transition: all .15s; }
+  .month-card:hover { border-color: var(--green-mid); box-shadow: 0 2px 8px rgba(26,122,82,.1); }
+  .month-card.cur { border-color: var(--green); border-width: 2px; }
+  .month-card.cur .mname { color: var(--green); }
+  .mname { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 3px; }
+  .mamt { font-size: 13px; font-weight: 700; color: var(--green); font-family: 'DM Mono', monospace; }
+  .mhrs { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  .chart-wrap { position: relative; width: 100%; height: 200px; }
+
+  /* Calendar */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .cal-nav-title { font-size: 16px; font-weight: 700; }
+  .cal-nav-btn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); width: 34px; height: 34px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all .15s; color: var(--text); }
+  .cal-nav-btn:hover { background: var(--surface2); border-color: var(--border2); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-dow { text-align: center; font-size: 11px; font-weight: 700; padding: 6px 0 4px; color: var(--text3); }
+  .cal-dow:first-child { color: var(--red); }
+  .cal-dow:last-child { color: var(--blue); }
+  .cal-cell { min-height: 62px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px; cursor: pointer; background: var(--surface); transition: all .12s; overflow: hidden; }
+  .cal-cell:hover { border-color: var(--green-mid); z-index: 1; }
+  .cal-cell.other { background: var(--surface2); opacity: .55; pointer-events: none; }
+  .cal-cell.today { border-color: var(--green); border-width: 2px; }
+  .cal-cell.has-shift { background: var(--green-light); }
+  .day-num { font-size: 11px; font-weight: 700; color: var(--text2); line-height: 1; }
+  .cal-cell.sun .day-num { color: var(--red); }
+  .cal-cell.sat .day-num { color: var(--blue); }
+  .shift-badge { display: block; font-size: 9.5px; color: var(--green); background: rgba(26,122,82,.12); border-radius: 3px; padding: 1px 3px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'DM Mono', monospace; }
+  .shift-amt { display: block; font-size: 10px; font-weight: 700; color: var(--green); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .cal-summary { font-size: 12px; color: var(--text2); margin-top: 8px; margin-bottom: 4px; font-weight: 500; font-family: 'DM Mono', monospace; }
+
+  /* Modal */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); padding: 22px; width: 100%; max-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,.18); }
+  .modal-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+  .modal-date { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+
+  /* Forms */
+  label { font-size: 12px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number], select { width: 100%; padding: 8px 11px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; outline: none; transition: border .15s; }
+  input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,122,82,.12); }
+  .form-group { margin-bottom: 12px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+
+  /* Buttons */
+  .btn { padding: 8px 18px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+  .btn:hover { background: var(--surface2); border-color: var(--border2); }
+  .btn-primary { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn-primary:hover { background: #155f3f; border-color: #155f3f; }
+  .btn-danger { color: var(--red); }
+  .btn-danger:hover { background: var(--red-light); border-color: var(--red); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-xs { padding: 3px 9px; font-size: 11px; }
+  .flex-end { display: flex; justify-content: flex-end; gap: 8px; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  /* Shift list in modal */
+  .shift-list-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--green-light); border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 13px; }
+  .shift-list-time { font-family: 'DM Mono', monospace; font-weight: 500; flex: 1; }
+  .shift-list-amt { font-family: 'DM Mono', monospace; color: var(--green); font-weight: 700; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+  /* Wage list */
+  .wage-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border-radius: var(--radius-sm); margin-bottom: 8px; font-size: 13px; }
+  .wage-period { flex: 1; color: var(--text2); font-size: 12px; }
+  .wage-rate { font-family: 'DM Mono', monospace; font-weight: 700; }
+
+  /* Preset buttons */
+  .preset-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .preset-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); border-radius: 20px; cursor: pointer; background: var(--surface); color: var(--text2); font-family: 'DM Mono', monospace; transition: all .15s; }
+  .preset-btn:hover { background: var(--green-light); border-color: var(--green); color: var(--green); }
+  .preset-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+
+  .separator { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+  .section-label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .hint { font-size: 12px; color: var(--text3); margin-bottom: 10px; }
+  .empty-state { text-align: center; padding: 24px; color: var(--text3); font-size: 13px; }
 </style>
 </head>
 <body>
 
-<h1>Maze Tilt</h1>
-<div id="hud">
-  <div>TIME <span class="val" id="timerDisp">0.0</span>s</div>
-  <div id="lvBadge">LV <span id="lvDisp">1</span></div>
-  <div>BEST <span class="val" id="bestDisp">—</span>s</div>
+<div class="header">
+  <div class="header-title">
+    <div class="dot"></div>
+    扶養内収入管理
+  </div>
+  <span class="year-badge" id="yearBadge">2026年</span>
 </div>
-<canvas id="c" width="340" height="340"></canvas>
-<div id="msg">STARTを押して端末を傾けてください</div>
-<button id="startBtn">START</button>
-<div id="pcHint">PC: 矢印キーで操作</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('dash')">ダッシュボード</button>
+    <button class="tab" onclick="showTab('cal')">カレンダー</button>
+    <button class="tab" onclick="showTab('wage')">時給設定</button>
+    <button class="tab" onclick="showTab('cfg')">設定</button>
+  </div>
+
+  <!-- ダッシュボード -->
+  <div id="tab-dash">
+    <div id="alertArea"></div>
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">年間収入</div><div class="metric-value" id="m-total">¥0</div></div>
+      <div class="metric"><div class="metric-label">残り枠</div><div class="metric-value ok" id="m-remain">¥0</div></div>
+      <div class="metric"><div class="metric-label">残り月平均</div><div class="metric-value" id="m-avg">¥0</div></div>
+      <div class="metric"><div class="metric-label">今月の収入</div><div class="metric-value" id="m-cur">¥0</div></div>
+    </div>
+    <div class="card">
+      <div class="progress-header">
+        <span style="font-size:13px;font-weight:500;color:var(--text2)">年間進捗</span>
+        <span class="progress-pct" id="pct-label">0%</span>
+      </div>
+      <div class="pbar"><div class="pfill ok" id="pfill" style="width:0%"></div></div>
+      <div class="progress-footer"><span>¥0</span><span id="limit-label">上限 ¥1,230,000</span></div>
+    </div>
+    <div class="month-grid" id="monthRow"></div>
+    <div class="card" style="padding:16px 18px">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">月別収入</div>
+      <div class="chart-wrap"><canvas id="incomeChart" role="img" aria-label="月別収入棒グラフ">月別収入データ</canvas></div>
+    </div>
+  </div>
+
+  <!-- カレンダー -->
+  <div id="tab-cal" style="display:none">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="calPrev()">&#8249;</button>
+      <span class="cal-nav-title" id="calTitle">2026年1月</span>
+      <button class="cal-nav-btn" onclick="calNext()">&#8250;</button>
+    </div>
+    <div class="card" style="padding:12px">
+      <div class="cal-grid">
+        <div class="cal-dow">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div>
+        <div class="cal-dow">水</div><div class="cal-dow">木</div><div class="cal-dow">金</div><div class="cal-dow">土</div>
+      </div>
+      <div class="cal-grid" id="calBody" style="margin-top:3px"></div>
+    </div>
+    <div class="cal-summary" id="calSummary"></div>
+  </div>
+
+  <!-- 時給設定 -->
+  <div id="tab-wage" style="display:none">
+    <div class="card">
+      <div class="card-title">時給を追加</div>
+      <div class="row3">
+        <div><label>開始日</label><input type="text" id="w-start" placeholder="2026/1/1"></div>
+        <div><label>終了日（空白=無期限）</label><input type="text" id="w-end" placeholder="2026/5/31"></div>
+        <div><label>時給（円）</label><input type="number" id="w-rate" placeholder="1120" min="0"></div>
+      </div>
+      <div class="flex-end"><button class="btn btn-primary" onclick="addWage()">＋ 追加</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title">設定済み時給</div>
+      <div id="wageList"></div>
+    </div>
+  </div>
+
+  <!-- 設定 -->
+  <div id="tab-cfg" style="display:none">
+    <div class="card">
+      <div class="section-label">年収上限</div>
+      <div class="preset-btns" id="presetBtns">
+        <button class="preset-btn active" onclick="setLimit(1230000)">123万</button>
+        <button class="preset-btn" onclick="setLimit(1030000)">103万</button>
+        <button class="preset-btn" onclick="setLimit(1060000)">106万</button>
+        <button class="preset-btn" onclick="setLimit(1300000)">130万</button>
+        <button class="preset-btn" onclick="setLimit(1500000)">150万</button>
+      </div>
+      <div class="flex-row" style="margin-bottom:10px">
+        <label style="display:inline;margin:0;white-space:nowrap;font-size:13px">カスタム：</label>
+        <input type="number" id="customLimit" placeholder="例：1230000" style="width:180px">
+        <button class="btn" onclick="setCustomLimit()">設定</button>
+      </div>
+      <div style="font-size:13px;color:var(--text2)">現在の上限：<span id="limitDisp" style="font-weight:700;color:var(--text);font-family:'DM Mono',monospace">¥1,230,000</span></div>
+
+      <div class="separator"></div>
+      <div class="section-label">対象年</div>
+      <div class="flex-row">
+        <input type="number" id="cfgYear" value="2026" min="2020" max="2040" style="width:110px">
+        <button class="btn" onclick="setYear()">適用</button>
+      </div>
+
+      <div class="separator"></div>
+      <div class="section-label" style="color:var(--red)">データ管理</div>
+      <button class="btn btn-danger" onclick="clearAll()">全データを削除</button>
+    </div>
+  </div>
+</div>
+
+<!-- モーダル -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">シフト入力</div>
+    <div id="modalExisting"></div>
+    <hr class="divider">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">新しいシフトを追加</div>
+    <div class="row2">
+      <div class="form-group"><label>開始時刻</label><input type="text" id="m-start" placeholder="9:00"></div>
+      <div class="form-group"><label>終了時刻</label><input type="text" id="m-end" placeholder="17:00"></div>
+    </div>
+    <div class="row2">
+      <div class="form-group"><label>休憩（分）</label><input type="number" id="m-break" value="60" min="0"></div>
+      <div class="form-group"><label>メモ（任意）</label><input type="text" id="m-memo" placeholder=""></div>
+    </div>
+    <div class="flex-end">
+      <button class="btn btn-sm" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary btn-sm" onclick="saveShift()">追加</button>
+    </div>
+  </div>
+</div>
 
 <script>
-const CV = document.getElementById('c');
-const ctx = CV.getContext('2d');
-const W = 340, H = 340, CELL = 20;
+let S = { shifts: [], wages: [{ start: '2026/1/1', end: '', rate: 1120 }], limit: 1230000, year: 2026 };
+let calYear = 2026, calMonth = 0, activeDate = null, chartInst = null;
 
-let ball, vx, vy, walls, goal, running = false, startTime, animId;
-let level = 1, best = {};
-let tiltX = 0, tiltY = 0;
-let permGranted = false;
-
-const MAZES = [
-  [
-    "#################",
-    "#S  #    #      #",
-    "# # # ## # #### #",
-    "# # #  # #    # #",
-    "# ### ## ##### ##",
-    "#   #  #   #    #",
-    "### # ## # # ## #",
-    "#   #    # #    #",
-    "# ####### # ### #",
-    "#   #   # #     #",
-    "### # # # ##### #",
-    "#   # # #     # #",
-    "# ### ####### # #",
-    "#     #     # # #",
-    "##### # ### # # #",
-    "#       #     #G#",
-    "#################",
-  ],
-  [
-    "#################",
-    "#S# #       #   #",
-    "# # # ##### # # #",
-    "#   #   #   # # #",
-    "####### # ### # #",
-    "#   #   #   # # #",
-    "# # # ##### # # #",
-    "# # #   #   # # #",
-    "# # ### # ### # #",
-    "# #   # #   # # #",
-    "# ### # ### # # #",
-    "#   # #   # # # #",
-    "### # ### # # # #",
-    "#   #   # # #   #",
-    "# ##### # # ### #",
-    "#       #     #G#",
-    "#################",
-  ],
-  [
-    "#################",
-    "#S    #   #     #",
-    "##### # # # ### #",
-    "#     # # # #   #",
-    "# ##### # # # ###",
-    "#   #   # #   # #",
-    "### # ### ##### #",
-    "#   #   #   #   #",
-    "# ##### # # # ###",
-    "# #   # # # #   #",
-    "# # # # # # ### #",
-    "# # # # # #   # #",
-    "# # # # # ### # #",
-    "# # # #   #   # #",
-    "# # # ##### ### #",
-    "#   #         #G#",
-    "#################",
-  ]
-];
-
-function parseMaze(maze) {
-  const w = [], s = {x: CELL + CELL/2, y: CELL + CELL/2}, g = {x: W - CELL/2, y: H - CELL/2};
-  for (let r = 0; r < maze.length; r++) {
-    for (let c = 0; c < maze[r].length; c++) {
-      const ch = maze[r][c];
-      if (ch === '#') w.push({ x: c * CELL, y: r * CELL });
-      if (ch === 'S') { s.x = c * CELL + CELL / 2; s.y = r * CELL + CELL / 2; }
-      if (ch === 'G') { g.x = c * CELL + CELL / 2; g.y = r * CELL + CELL / 2; }
-    }
-  }
-  return { w, s, g };
+function load() {
+  try { const d = localStorage.getItem('fuyou_v3'); if (d) Object.assign(S, JSON.parse(d)); } catch (e) {}
+}
+function save() {
+  try { localStorage.setItem('fuyou_v3', JSON.stringify(S)); } catch (e) {}
 }
 
-function drawFrame() {
-  ctx.fillStyle = '#0d0d14';
-  ctx.fillRect(0, 0, W, H);
+function pd(s) {
+  if (!s) return null;
+  const m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+function pt(s) {
+  if (!s) return null;
+  const m = s.match(/(\d{1,2}):(\d{2})/);
+  return m ? +m[1] * 60 + +m[2] : null;
+}
+function fm(n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+function dateKey(y, mo, d) { return `${y}/${String(mo + 1).padStart(2, '0')}/${String(d).padStart(2, '0')}`; }
+function uid() { return Math.random().toString(36).slice(2, 9); }
 
-  if (!walls || !ball || !goal) return;
+function wageFor(dateStr) {
+  const dt = pd(dateStr); if (!dt) return 1000;
+  let best = null;
+  for (const w of S.wages) {
+    const ws = pd(w.start), we = w.end ? pd(w.end) : new Date(2099, 11, 31);
+    if (ws && we && dt >= ws && dt <= we) { if (!best || pd(w.start) >= pd(best.start)) best = w; }
+  }
+  return best ? best.rate : 1000;
+}
+function calcShift(sh) {
+  const st = pt(sh.start), et = pt(sh.end); if (st === null || et === null) return 0;
+  let m = et - st; if (m < 0) m += 1440; m -= (sh.breakMin || 0);
+  return Math.max(0, m / 60) * wageFor(sh.date);
+}
+function calcHours(sh) {
+  const st = pt(sh.start), et = pt(sh.end); if (st === null || et === null) return 0;
+  let m = et - st; if (m < 0) m += 1440; m -= (sh.breakMin || 0); return Math.max(0, m / 60);
+}
+function monthlyData() {
+  const amt = Array(12).fill(0), hrs = Array(12).fill(0);
+  for (const s of S.shifts) {
+    const dt = pd(s.date); if (!dt || dt.getFullYear() !== S.year) continue;
+    const mo = dt.getMonth(); amt[mo] += calcShift(s); hrs[mo] += calcHours(s);
+  }
+  return { amt, hrs };
+}
+function shiftsOn(key) { return S.shifts.filter(s => s.date === key); }
 
-  walls.forEach(w => {
-    ctx.fillStyle = '#1e1e30';
-    ctx.fillRect(w.x, w.y, CELL, CELL);
-    ctx.strokeStyle = '#2a2a45';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(w.x + 0.5, w.y + 0.5, CELL - 1, CELL - 1);
+function renderDash() {
+  const { amt, hrs } = monthlyData();
+  const total = amt.reduce((a, b) => a + b, 0);
+  const remain = Math.max(0, S.limit - total);
+  const now = new Date(), curMo = now.getMonth();
+  const remMos = now.getFullYear() === S.year ? Math.max(1, 12 - curMo) : 12;
+  const avg = remain / remMos;
+  const pct = Math.min(100, total / S.limit * 100);
+  const cls = pct < 70 ? 'ok' : pct < 90 ? 'warn' : 'danger';
+
+  document.getElementById('m-total').textContent = fm(total);
+  document.getElementById('m-total').className = 'metric-value ' + cls;
+  document.getElementById('m-remain').textContent = fm(remain);
+  document.getElementById('m-avg').textContent = fm(avg);
+  document.getElementById('m-cur').textContent = fm(amt[curMo] || 0);
+  document.getElementById('pct-label').textContent = Math.round(pct) + '%';
+  const pf = document.getElementById('pfill');
+  pf.style.width = pct + '%'; pf.className = 'pfill ' + cls;
+  document.getElementById('limit-label').textContent = '上限 ' + fm(S.limit);
+  document.getElementById('yearBadge').textContent = S.year + '年';
+
+  const aa = document.getElementById('alertArea');
+  if (pct >= 90) aa.innerHTML = `<div class="alert danger">年収上限の${Math.round(pct)}%に達しています。残り${fm(remain)}です。</div>`;
+  else if (pct >= 70) aa.innerHTML = `<div class="alert warn">上限の${Math.round(pct)}%に到達。残り${fm(remain)}（月平均${fm(avg)}）</div>`;
+  else if (total > 0) aa.innerHTML = `<div class="alert ok">順調です。残り${fm(remain)}、月平均${fm(avg)}まで働けます。</div>`;
+  else aa.innerHTML = '';
+
+  const mn = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  document.getElementById('monthRow').innerHTML = mn.map((n, i) => `
+    <div class="month-card ${i === curMo && now.getFullYear() === S.year ? 'cur' : ''}" onclick="jumpMonth(${i})">
+      <div class="mname">${n}</div>
+      <div class="mamt">${fm(amt[i])}</div>
+      <div class="mhrs">${hrs[i].toFixed(1)}h</div>
+    </div>`).join('');
+
+  renderChart(amt);
+}
+
+function renderChart(amt) {
+  const ctx = document.getElementById('incomeChart').getContext('2d');
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+      datasets: [{
+        label: '収入', data: amt.map(a => Math.round(a)),
+        backgroundColor: '#5daa82', borderRadius: 4, borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fm(c.parsed.y) } } },
+      scales: {
+        x: { ticks: { color: '#9e9c92', font: { size: 11 }, autoSkip: false, maxRotation: 0 }, grid: { display: false }, border: { display: false } },
+        y: { ticks: { color: '#9e9c92', font: { size: 11 }, callback: v => '¥' + Math.round(v / 1000) + 'k' }, grid: { color: 'rgba(0,0,0,.05)' }, border: { display: false } }
+      }
+    }
   });
-
-  ctx.fillStyle = '#1a5a45';
-  ctx.beginPath();
-  ctx.arc(goal.x, goal.y, 9, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#3a9a7a';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  ctx.fillStyle = '#3a9a7a';
-  ctx.font = 'bold 7px Courier New';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('GOAL', goal.x, goal.y);
-
-  ctx.fillStyle = '#3060b0';
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, 7, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#5090e0';
-  ctx.lineWidth = 1;
-  ctx.stroke();
 }
 
-function collides(nx, ny, r) {
-  for (const w of walls) {
-    const cx = Math.max(w.x, Math.min(nx, w.x + CELL));
-    const cy = Math.max(w.y, Math.min(ny, w.y + CELL));
-    const dx = nx - cx, dy = ny - cy;
-    if (dx * dx + dy * dy < r * r) return true;
-  }
-  return false;
-}
-
-function loop() {
-  if (!running) return;
-  const GRAVITY = 0.18, FRICTION = 0.88, R = 7;
-
-  vx = (vx + tiltX * GRAVITY) * FRICTION;
-  vy = (vy + tiltY * GRAVITY) * FRICTION;
-
-  let nx = ball.x + vx;
-  let ny = ball.y + vy;
-
-  if (collides(nx, ball.y, R)) { vx *= -0.3; nx = ball.x; }
-  if (collides(ball.x, ny, R)) { vy *= -0.3; ny = ball.y; }
-
-  nx = Math.max(R, Math.min(W - R, nx));
-  ny = Math.max(R, Math.min(H - R, ny));
-
-  ball.x = nx;
-  ball.y = ny;
-
-  const dx = ball.x - goal.x, dy = ball.y - goal.y;
-  if (dx * dx + dy * dy < 14 * 14) {
-    running = false;
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    if (!best[level] || parseFloat(elapsed) < parseFloat(best[level])) best[level] = elapsed;
-    document.getElementById('bestDisp').textContent = best[level];
-    const msg = document.getElementById('msg');
-    msg.textContent = 'クリア！ ' + elapsed + '秒 → 次のレベルへ';
-    msg.className = 'clear';
-    const btn = document.getElementById('startBtn');
-    btn.textContent = 'NEXT LV';
-    btn.onclick = function() { level++; document.getElementById('lvDisp').textContent = level; startGame(); };
-    drawFrame();
-    return;
-  }
-
-  document.getElementById('timerDisp').textContent = ((Date.now() - startTime) / 1000).toFixed(1);
-  drawFrame();
-  animId = requestAnimationFrame(loop);
-}
-
-async function startGame() {
-  if (animId) cancelAnimationFrame(animId);
-  running = false;
-
-  const maze = MAZES[(level - 1) % MAZES.length];
-  const parsed = parseMaze(maze);
-  walls = parsed.w;
-  ball = { x: parsed.s.x, y: parsed.s.y };
-  goal = { x: parsed.g.x, y: parsed.g.y };
-  vx = 0; vy = 0;
-
-  const msg = document.getElementById('msg');
-  msg.textContent = '端末を傾けてボールを転がしてください';
-  msg.className = '';
-  const btn = document.getElementById('startBtn');
-  btn.textContent = 'RESTART';
-  btn.onclick = startGame;
-  document.getElementById('lvDisp').textContent = level;
-  document.getElementById('timerDisp').textContent = '0.0';
-
-  if (!permGranted) {
-    if (typeof DeviceOrientationEvent !== 'undefined' &&
-        typeof DeviceOrientationEvent.requestPermission === 'function') {
-      try {
-        const res = await DeviceOrientationEvent.requestPermission();
-        if (res === 'granted') permGranted = true;
-      } catch(e) {}
-    } else {
-      permGranted = true;
+function renderCal() {
+  const mn = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  document.getElementById('calTitle').textContent = calYear + '年' + mn[calMonth];
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const days = new Date(calYear, calMonth + 1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date();
+  const cellCount = Math.ceil((first + days) / 7) * 7;
+  let html = '';
+  for (let i = 0; i < cellCount; i++) {
+    let d, mo, yr, other = false;
+    if (i < first) { d = prevDays - first + i + 1; mo = calMonth - 1; yr = calYear; if (mo < 0) { mo = 11; yr--; } other = true; }
+    else if (i >= first + days) { d = i - first - days + 1; mo = calMonth + 1; yr = calYear; if (mo > 11) { mo = 0; yr++; } other = true; }
+    else { d = i - first + 1; mo = calMonth; yr = calYear; }
+    const dow = i % 7;
+    const key = dateKey(yr, mo, d);
+    const ss = other ? [] : shiftsOn(key);
+    const isToday = yr === today.getFullYear() && mo === today.getMonth() && d === today.getDate();
+    let cls = 'cal-cell';
+    if (dow === 0) cls += ' sun'; if (dow === 6) cls += ' sat';
+    if (other) cls += ' other'; if (isToday) cls += ' today'; if (ss.length) cls += ' has-shift';
+    let inner = `<span class="day-num">${d}</span>`;
+    for (const s of ss) {
+      inner += `<span class="shift-badge">${s.start}-${s.end}</span>`;
     }
+    if (ss.length) inner += `<span class="shift-amt">${fm(ss.reduce((a, s) => a + calcShift(s), 0))}</span>`;
+    const clickAttr = other ? '' : `onclick="openModal('${key}')"`;
+    html += `<div class="${cls}" ${clickAttr}>${inner}</div>`;
   }
-
-  running = true;
-  startTime = Date.now();
-  drawFrame();
-  animId = requestAnimationFrame(loop);
+  document.getElementById('calBody').innerHTML = html;
+  const mShifts = S.shifts.filter(s => { const dt = pd(s.date); return dt && dt.getFullYear() === calYear && dt.getMonth() === calMonth; });
+  const mTotal = mShifts.reduce((a, s) => a + calcShift(s), 0);
+  const mHrs = mShifts.reduce((a, s) => a + calcHours(s), 0);
+  document.getElementById('calSummary').textContent = mn[calMonth] + '合計：' + fm(mTotal) + '（' + mHrs.toFixed(1) + '時間 / ' + mShifts.length + '日）';
 }
 
-window.addEventListener('deviceorientation', function(e) {
-  if (!running) return;
-  tiltX = Math.max(-1, Math.min(1, (e.gamma || 0) / 30));
-  tiltY = Math.max(-1, Math.min(1, ((e.beta || 45) - 45) / 30));
-});
+function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCal(); }
+function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCal(); }
+function jumpMonth(m) { calYear = S.year; calMonth = m; showTab('cal'); }
 
-document.addEventListener('keydown', function(e) {
-  if (!running) return;
-  var s = 0.7;
-  if (e.key === 'ArrowLeft')  { tiltX = -s; e.preventDefault(); }
-  if (e.key === 'ArrowRight') { tiltX =  s; e.preventDefault(); }
-  if (e.key === 'ArrowUp')    { tiltY = -s; e.preventDefault(); }
-  if (e.key === 'ArrowDown')  { tiltY =  s; e.preventDefault(); }
-});
-document.addEventListener('keyup', function(e) {
-  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(e.key) >= 0) {
-    tiltX = 0; tiltY = 0;
+function openModal(key) {
+  activeDate = key;
+  const dt = pd(key);
+  const dow = ['日', '月', '火', '水', '木', '金', '土'];
+  document.getElementById('modalTitle').textContent = `${dt.getMonth() + 1}月${dt.getDate()}日（${dow[dt.getDay()]}）`;
+  const ss = shiftsOn(key);
+  const ex = document.getElementById('modalExisting');
+  if (ss.length) {
+    ex.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">登録済みシフト</div>' +
+      ss.map(s => `<div class="shift-list-item"><span class="shift-list-time">${s.start}〜${s.end}</span><span class="shift-list-amt">${fm(calcShift(s))}</span><button class="btn btn-danger btn-xs" onclick="removeShift('${s.id}')">削除</button></div>`).join('');
+  } else { ex.innerHTML = ''; }
+  document.getElementById('m-start').value = '';
+  document.getElementById('m-end').value = '';
+  document.getElementById('m-break').value = '60';
+  document.getElementById('m-memo').value = '';
+  document.getElementById('overlay').className = 'overlay open';
+  setTimeout(() => document.getElementById('m-start').focus(), 100);
+}
+function closeModal() { document.getElementById('overlay').className = 'overlay'; activeDate = null; }
+function overlayClick(e) { if (e.target === document.getElementById('overlay')) closeModal(); }
+
+function saveShift() {
+  if (!activeDate) return;
+  const start = document.getElementById('m-start').value.trim();
+  const end = document.getElementById('m-end').value.trim();
+  if (!pt(start) || !pt(end)) { alert('時刻を正しく入力してください（例：9:00）'); return; }
+  const breakMin = +document.getElementById('m-break').value || 0;
+  const memo = document.getElementById('m-memo').value.trim();
+  S.shifts.push({ id: uid(), date: activeDate, start, end, breakMin, memo });
+  save(); closeModal(); renderCal(); renderDash();
+}
+function removeShift(id) {
+  S.shifts = S.shifts.filter(s => s.id !== id);
+  save();
+  if (activeDate) openModal(activeDate);
+  renderCal(); renderDash();
+}
+
+function renderWageList() {
+  const el = document.getElementById('wageList');
+  if (!S.wages.length) { el.innerHTML = '<div class="empty-state">時給が設定されていません</div>'; return; }
+  el.innerHTML = S.wages.sort((a, b) => (pd(a.start) || 0) - (pd(b.start) || 0)).map((w, i) => `
+    <div class="wage-item">
+      <div class="wage-period">${w.start} 〜 ${w.end || '無期限'}</div>
+      <div class="wage-rate">¥${w.rate.toLocaleString()}/h</div>
+      <button class="btn btn-danger btn-xs" onclick="removeWage(${i})">削除</button>
+    </div>`).join('');
+}
+function addWage() {
+  const start = document.getElementById('w-start').value.trim();
+  const end = document.getElementById('w-end').value.trim();
+  const rate = +document.getElementById('w-rate').value;
+  if (!pd(start) || !rate) { alert('開始日と時給を入力してください'); return; }
+  S.wages.push({ start, end, rate });
+  save(); renderWageList(); renderDash();
+  document.getElementById('w-start').value = '';
+  document.getElementById('w-end').value = '';
+  document.getElementById('w-rate').value = '';
+}
+function removeWage(i) { S.wages.splice(i, 1); save(); renderWageList(); renderDash(); }
+
+function setLimit(v, updateBtn) {
+  S.limit = v;
+  document.getElementById('limitDisp').textContent = fm(v);
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  const presets = [1230000, 1030000, 1060000, 1300000, 1500000];
+  const idx = presets.indexOf(v);
+  if (idx >= 0) document.querySelectorAll('.preset-btn')[idx].classList.add('active');
+  save(); renderDash();
+}
+function setCustomLimit() {
+  const v = +document.getElementById('customLimit').value;
+  if (v > 0) { setLimit(v); document.getElementById('customLimit').value = ''; }
+}
+function setYear() {
+  const v = +document.getElementById('cfgYear').value;
+  if (v >= 2020 && v <= 2040) { S.year = v; calYear = v; calMonth = 0; save(); renderDash(); renderCal(); document.getElementById('yearBadge').textContent = v + '年'; }
+}
+function clearAll() {
+  if (confirm('全データを削除しますか？この操作は取り消せません。')) {
+    S.shifts = []; S.wages = [{ start: '2026/1/1', end: '', rate: 1120 }]; S.limit = 1230000; S.year = 2026;
+    calYear = 2026; calMonth = 0; save(); renderDash(); renderCal(); renderWageList();
   }
+}
+
+function showTab(t) {
+  ['dash', 'cal', 'wage', 'cfg'].forEach(id => { document.getElementById('tab-' + id).style.display = id === t ? '' : 'none'; });
+  document.querySelectorAll('.tab').forEach((el, i) => { el.classList.toggle('active', ['dash', 'cal', 'wage', 'cfg'][i] === t); });
+  if (t === 'dash') renderDash();
+  if (t === 'cal') renderCal();
+  if (t === 'wage') renderWageList();
+}
+
+// Enterキーでシフト保存
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('overlay').classList.contains('open')) saveShift();
+  if (e.key === 'Escape' && document.getElementById('overlay').classList.contains('open')) closeModal();
 });
 
-document.getElementById('startBtn').onclick = startGame;
-
-var initParsed = parseMaze(MAZES[0]);
-walls = initParsed.w;
-ball = { x: initParsed.s.x, y: initParsed.s.y };
-goal = { x: initParsed.g.x, y: initParsed.g.y };
-drawFrame();
+load();
+calYear = S.year;
+calMonth = new Date().getMonth();
+renderDash();
 </script>
 </body>
 </html>
