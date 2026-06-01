@@ -174,10 +174,11 @@ window.renderDash = function(){
     return `<div class="month-card ${isCur?'cur':''} ${hasData?'has-data':''}" onclick="jumpMonth(${i})">
       <div class="mc-bg" style="width:${pct}%"></div>
       <div class="mname">${n}</div>
-      <div class="mc-mid">
-        <div class="mamt ${hasData?'':'zero'}">${fms(amt[i])}</div>
-        <div class="mhrs">${hasData?hrs[i].toFixed(1)+'h / '+days[i]+'日':'—'}</div>
-      </div>
+      <div class="mamt ${hasData?'':'zero'}" style="flex:1;padding:0 8px">${fms(amt[i])}</div>
+      ${hasData
+        ? `<div class="mc-sub"><span class="mc-hrs-badge">${hrs[i].toFixed(1)}h</span><span class="mc-days-badge">${days[i]}日</span></div>`
+        : `<span class="mc-zero">—</span>`
+      }
     </div>`;
   }).join('');
 };
@@ -649,6 +650,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .mamt{font-size:15px;font-weight:700;color:var(--text);font-family:'Rajdhani',sans-serif;line-height:1.1}
 .mamt.zero{color:var(--text3)}
 .mhrs{font-size:10px;color:var(--text3);font-family:'Rajdhani',sans-serif;margin-top:1px}
+.mc-sub{display:flex;gap:5px;align-items:center;flex-shrink:0}
+.mc-hrs-badge{font-size:11px;font-weight:600;color:#4a5d9a;font-family:'Rajdhani',sans-serif;background:var(--surface3);padding:2px 7px;border-radius:10px;white-space:nowrap}
+.mc-days-badge{font-size:11px;font-weight:600;color:#185FA5;font-family:'Rajdhani',sans-serif;background:#e8f2fc;padding:2px 7px;border-radius:10px;white-space:nowrap}
+.mc-zero{font-size:11px;color:var(--text3);flex-shrink:0}
 .month-list-label{font-size:11px;font-weight:800;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;font-family:'Nunito',sans-serif}
 .chart-wrap{position:relative;width:100%;height:200px}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
