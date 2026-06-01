@@ -54,10 +54,7 @@ function startListening(){
 }
 
 function showSyncStatus(msg, isErr=false){
-  const el = document.getElementById('syncStatus');
-  if(!el) return;
-  el.textContent = msg;
-  el.style.color = isErr ? '#e03060' : '#10a86a';
+  // syncStatus removed from UI
 }
 
 /* ===== AUTH ===== */
@@ -65,7 +62,7 @@ onAuthStateChanged(auth, user => {
   if(user){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('appScreen').style.display = '';
-    document.getElementById('userEmail').textContent = user.email;
+    // userEmail removed from UI
     startListening();
   } else {
     document.getElementById('loginScreen').style.display = '';
@@ -470,20 +467,20 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .login-err{font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px}
 
 /* HEADER */
-.header{background:var(--accent);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header{background:var(--accent);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header-left{display:flex;align-items:center;gap:10px}
 .header-title{font-size:15px;font-weight:700;color:#fff;font-family:'Nunito',sans-serif;display:flex;align-items:center;gap:8px}
 .header-icon{width:26px;height:26px;background:rgba(255,255,255,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
 .header-right{display:flex;align-items:center;gap:10px}
 .year-badge{font-size:12px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;padding:3px 12px;border-radius:20px;font-family:'Rajdhani',sans-serif}
-.sync-status{font-size:11px;font-weight:600;color:rgba(255,255,255,.8)}
-.user-info{display:flex;align-items:center;gap:8px}
-.user-email{font-size:11px;color:rgba(255,255,255,.8);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+
+
 .logout-btn{font-size:11px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:'Nunito',sans-serif}
 .logout-btn:hover{background:rgba(255,255,255,.3)}
 
-.container{max-width:760px;margin:0 auto;padding:20px 16px 80px}
-.tabs{display:flex;gap:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:4px;margin-bottom:20px;box-shadow:0 2px 12px rgba(59,110,240,.1)}
+.container{max-width:760px;margin:0 auto;padding:16px 16px 80px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:0 0 12px 12px;padding:6px 10px 8px;margin-bottom:0;box-shadow:0 2px 12px rgba(59,110,240,.1);position:sticky;top:46px;z-index:99}
 .tab{flex:1;padding:9px 4px;font-size:13px;font-weight:700;border:none;border-radius:9px;cursor:pointer;background:transparent;color:var(--text2);font-family:'Nunito','Noto Sans JP',sans-serif;transition:all .18s;text-align:center}
 .tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(59,110,240,.35)}
 .tab:hover:not(.active){background:var(--surface2);color:var(--text)}
@@ -605,12 +602,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
       </div>
     </div>
     <div class="header-right">
-      <span class="sync-status" id="syncStatus">接続中...</span>
       <span class="year-badge" id="yearBadge">2026年</span>
-      <div class="user-info">
-        <span class="user-email" id="userEmail"></span>
-        <button class="logout-btn" onclick="doLogout()">ログアウト</button>
-      </div>
+      <button class="logout-btn" onclick="doLogout()">ログアウト</button>
     </div>
   </div>
 
@@ -622,7 +615,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
       <button class="tab" onclick="showTab('cfg')">設定</button>
     </div>
 
-    <div id="tab-dash">
+    <div id="tab-dash" style="margin-top:16px">
       <div id="alertArea"></div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">年間収入</div><div class="metric-value" id="m-total">¥0円</div></div>
@@ -645,7 +638,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
       </div>
     </div>
 
-    <div id="tab-cal" style="display:none">
+    <div id="tab-cal" style="display:none;margin-top:16px">
       <div class="cal-nav">
         <button class="cal-nav-btn" onclick="calPrev()">&#8249;</button>
         <span class="cal-nav-title" id="calTitle">2026年1月</span>
@@ -661,7 +654,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
       <div class="cal-summary" id="calSummary"></div>
     </div>
 
-    <div id="tab-wage" style="display:none">
+    <div id="tab-wage" style="display:none;margin-top:16px">
       <div class="card">
         <div class="card-title">時給を追加</div>
         <div class="row3">
@@ -677,7 +670,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
       </div>
     </div>
 
-    <div id="tab-cfg" style="display:none">
+    <div id="tab-cfg" style="display:none;margin-top:16px">
       <div class="card">
         <div class="section-label">年収上限</div>
         <div style="margin-bottom:14px">
