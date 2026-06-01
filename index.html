@@ -243,9 +243,11 @@ function buildPicker(listId,colId,items,initVal){
   function idxToY(idx){ return -((n+idx)*ITEM_H)+2*ITEM_H; }
   function yToIdx(y){ return ((Math.round((-y+2*ITEM_H)/ITEM_H)-n)%n+n)%n; }
   let posY=idxToY(initIdx), velY=0, rafId=null, isDragging=false;
+  let currentIdx=initIdx; // 確定インデックスを別管理
   function updateDOM(){
     listEl.style.transform=`translateY(${posY}px)`;
     const ci=yToIdx(posY);
+    currentIdx=ci; // 常に最新を追跡
     listEl.querySelectorAll('.drum-list-item').forEach((el,k)=>{
       const sel=(k%n)===ci;
       el.style.color=sel?'#1c2a5e':'#8496c8';
@@ -259,7 +261,9 @@ function buildPicker(listId,colId,items,initVal){
     const target=snapNearest(), dist=target-posY;
     velY=velY*0.78+dist*0.18;
     if(Math.abs(velY)<0.15&&Math.abs(dist)<0.2){
-      posY=target;velY=0;updateDOM();rafId=null;return;
+      posY=target;velY=0;
+      currentIdx=yToIdx(posY); // スナップ完了時に確定
+      updateDOM();rafId=null;return;
     }
     posY+=velY;updateDOM();
     rafId=requestAnimationFrame(physicsLoop);
@@ -301,7 +305,7 @@ function buildPicker(listId,colId,items,initVal){
   colEl.addEventListener('wheel',e=>{
     e.preventDefault();velY+=e.deltaY>0?-60:60;startLoop();
   },{passive:false});
-  pickerState[listId]={getValue:()=>items[yToIdx(posY)]};
+  pickerState[listId]={getValue:()=>items[currentIdx]};
 }
 
 function initPickers(){
