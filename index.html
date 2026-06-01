@@ -5,392 +5,99 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>扶養内収入管理</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap');
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-:root {
-  --bg: #e8f0fe;
-  --surface: #ffffff;
-  --surface2: #f0f4ff;
-  --surface3: #dde8fd;
-  --border: #c2d0f5;
-  --border2: #97b0ef;
-  --text: #1c2a5e;
-  --text2: #4a5d9a;
-  --text3: #8496c8;
-  --accent: #3b6ef0;
-  --accent2: #5e8ef5;
-  --accent-light: #dce8ff;
-  --teal: #0fb8c9;
-  --teal-light: #d6f5f8;
-  --violet: #7c5cfc;
-  --violet-light: #ede8ff;
-  --warn: #e07c20;
-  --warn-light: #fff0e0;
-  --danger: #e03060;
-  --danger-light: #ffe0e8;
-  --ok: #10a86a;
-  --ok-light: #d6f5e8;
-  --radius: 14px;
-  --radius-sm: 9px;
-  --radius-xs: 6px;
-  --item-h: 44px;
-  --visible: 5;
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyB2rZEZdKJgJIQLjVWexT3-w3HVh1H7WFg",
+  authDomain: "syuunyuu-kanri.firebaseapp.com",
+  databaseURL: "https://syuunyuu-kanri-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "syuunyuu-kanri",
+  storageBucket: "syuunyuu-kanri.firebasestorage.app",
+  messagingSenderId: "203710982802",
+  appId: "1:203710982802:web:c57f261ca6b078d563544b"
+};
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const DATA_REF = 'shared/data';
 
-.header {
-  background: var(--accent);
-  padding: 14px 24px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 100;
-}
-.header-title { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; font-family: 'Nunito', sans-serif; }
-.header-icon { width: 28px; height: 28px; background: rgba(255,255,255,.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
-.year-badge { font-size: 12px; font-weight: 700; background: rgba(255,255,255,.2); color: #fff; padding: 4px 14px; border-radius: 20px; font-family: 'Rajdhani', sans-serif; }
-
-.container { max-width: 760px; margin: 0 auto; padding: 20px 16px 80px; }
-
-.tabs { display: flex; gap: 4px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(59,110,240,.1); }
-.tab { flex: 1; padding: 9px 4px; font-size: 13px; font-weight: 700; border: none; border-radius: 9px; cursor: pointer; background: transparent; color: var(--text2); font-family: 'Nunito', 'Noto Sans JP', sans-serif; transition: all .18s; text-align: center; }
-.tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(59,110,240,.35); }
-.tab:hover:not(.active) { background: var(--surface2); color: var(--text); }
-
-.card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(59,110,240,.07); }
-.card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--text); font-family: 'Nunito', sans-serif; }
-
-.metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
-@media(min-width:520px){ .metric-grid { grid-template-columns: repeat(4, 1fr); } }
-.metric { background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 13px 14px; }
-.metric-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; font-weight: 700; font-family: 'Nunito', sans-serif; }
-.metric-value { font-size: 16px; font-weight: 700; font-family: 'Rajdhani', sans-serif; color: var(--text); }
-.metric-value.ok { color: var(--ok); }
-.metric-value.warn { color: var(--warn); }
-.metric-value.danger { color: var(--danger); }
-
-.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.progress-pct { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 15px; color: var(--accent); }
-.pbar { height: 12px; background: var(--surface3); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
-.pfill { height: 100%; border-radius: 6px; transition: width .5s cubic-bezier(.4,0,.2,1); }
-.pfill.ok { background: linear-gradient(90deg,#10a86a,#0fb8c9); }
-.pfill.warn { background: linear-gradient(90deg,#e07c20,#f0a830); }
-.pfill.danger { background: linear-gradient(90deg,#e03060,#f05080); }
-.progress-footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-top: 5px; font-family: 'Rajdhani', sans-serif; }
-
-.alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 14px; font-weight: 600; border-left: 3px solid; font-family: 'Nunito','Noto Sans JP',sans-serif; }
-.alert.warn { background: var(--warn-light); color: var(--warn); border-color: var(--warn); }
-.alert.danger { background: var(--danger-light); color: var(--danger); border-color: var(--danger); }
-.alert.ok { background: var(--ok-light); color: var(--ok); border-color: var(--ok); }
-
-.month-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
-@media(min-width:480px){ .month-grid { grid-template-columns: repeat(4,1fr); } }
-@media(min-width:640px){ .month-grid { grid-template-columns: repeat(6,1fr); } }
-.month-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 10px 8px; cursor: pointer; transition: all .15s; }
-.month-card:hover { border-color: var(--accent2); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(59,110,240,.15); }
-.month-card.cur { border-color: var(--accent); border-width: 2px; background: var(--accent-light); }
-.month-card.cur .mname { color: var(--accent); }
-.mname { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 3px; font-family: 'Nunito',sans-serif; }
-.mamt { font-size: 12px; font-weight: 700; color: var(--teal); font-family: 'Rajdhani', sans-serif; }
-.mhrs { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'Rajdhani', sans-serif; }
-
-.chart-wrap { position: relative; width: 100%; height: 200px; }
-
-.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.cal-nav-title { font-size: 17px; font-weight: 800; color: var(--text); font-family: 'Nunito',sans-serif; }
-.cal-nav-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: 9px; width: 36px; height: 36px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all .15s; color: var(--accent); font-weight: 700; }
-.cal-nav-btn:hover { background: var(--accent-light); border-color: var(--accent); }
-.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
-.cal-dow { text-align: center; font-size: 11px; font-weight: 800; padding: 6px 0 5px; color: var(--text3); font-family: 'Nunito',sans-serif; }
-.cal-dow:first-child { color: var(--danger); }
-.cal-dow:last-child { color: var(--accent); }
-.cal-cell { min-height: 64px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); padding: 5px; cursor: pointer; background: var(--surface); transition: all .12s; overflow: hidden; }
-.cal-cell:hover { border-color: var(--accent2); background: var(--accent-light); }
-.cal-cell.other { background: var(--surface2); opacity: .45; pointer-events: none; }
-.cal-cell.today { border-color: var(--teal); border-width: 2px; background: var(--teal-light); }
-.cal-cell.has-shift { background: var(--violet-light); border-color: var(--violet); }
-.day-num { font-size: 11px; font-weight: 800; color: var(--text2); line-height: 1; font-family: 'Nunito',sans-serif; }
-.cal-cell.sun .day-num { color: var(--danger); }
-.cal-cell.sat .day-num { color: var(--accent); }
-.shift-badge { display: block; font-size: 9.5px; color: var(--violet); background: rgba(124,92,252,.13); border-radius: 3px; padding: 1px 3px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Rajdhani', sans-serif; }
-.shift-amt { display: block; font-size: 10px; font-weight: 700; color: var(--ok); margin-top: 2px; font-family: 'Rajdhani', sans-serif; }
-.cal-summary { font-size: 12px; color: var(--text2); margin-top: 8px; margin-bottom: 4px; font-weight: 600; font-family: 'Rajdhani', sans-serif; }
-
-/* ===== OVERLAY & MODAL ===== */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(28,42,94,.45); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
-.overlay.open { display: flex; }
-.modal { background: var(--surface); border-radius: var(--radius); padding: 22px; width: 100%; max-width: 400px; box-shadow: 0 8px 40px rgba(59,110,240,.22); border: 1.5px solid var(--border); }
-.modal-title { font-size: 16px; font-weight: 800; margin-bottom: 14px; color: var(--text); font-family: 'Nunito',sans-serif; }
-
-/* ===== iOS-STYLE PICKER ===== */
-.picker-section { margin-bottom: 14px; }
-.picker-section-title { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 6px; font-family: 'Nunito',sans-serif; }
-.pickers-row { display: flex; gap: 24px; }
-.picker-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.picker-group-label { font-size: 11px; color: var(--text3); font-weight: 700; font-family: 'Nunito',sans-serif; }
-.picker-pair { display: flex; align-items: center; gap: 2px; }
-.picker-colon { font-size: 24px; font-weight: 700; color: var(--text2); line-height: 1; padding: 0 2px; align-self: center; }
-
-/* Single drum column */
-.drum-col {
-  width: 52px;
-  height: calc(var(--item-h) * var(--visible));
-  overflow: hidden;
-  position: relative;
-  cursor: grab;
-  -webkit-user-select: none;
-  user-select: none;
-}
-.drum-col:active { cursor: grabbing; }
-
-.drum-list {
-  position: absolute;
-  left: 0; right: 0;
-  top: 0;
-  will-change: transform;
-}
-.drum-list-item {
-  height: var(--item-h);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text3);
-  transition: color .1s;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-/* Selection band */
-.drum-selector {
-  position: absolute;
-  top: calc(var(--item-h) * 2);
-  left: 0; right: 0;
-  height: var(--item-h);
-  pointer-events: none;
-  z-index: 2;
-  border-top: 1px solid var(--border2);
-  border-bottom: 1px solid var(--border2);
-  background: rgba(59,110,240,.06);
-}
-
-/* Fade mask */
-.drum-mask {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  background: linear-gradient(
-    to bottom,
-    rgba(255,255,255,.92) 0%,
-    rgba(255,255,255,.5) 20%,
-    transparent 38%,
-    transparent 62%,
-    rgba(255,255,255,.5) 80%,
-    rgba(255,255,255,.92) 100%
-  );
-}
-
-/* Forms */
-label { font-size: 12px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 4px; font-family: 'Nunito',sans-serif; }
-input[type=text], input[type=number], select { width: 100%; padding: 9px 12px; font-size: 13px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'Noto Sans JP',sans-serif; outline: none; transition: border .15s; }
-input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,110,240,.12); }
-.form-group { margin-bottom: 12px; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-.break-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-
-.btn { padding: 9px 18px; font-size: 13px; font-weight: 700; border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); color: var(--text); font-family: 'Nunito','Noto Sans JP',sans-serif; transition: all .15s; }
-.btn:hover { background: var(--surface2); border-color: var(--border2); }
-.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.btn-primary:hover { background: #2a5ae0; border-color: #2a5ae0; }
-.btn-danger { color: var(--danger); }
-.btn-danger:hover { background: var(--danger-light); border-color: var(--danger); }
-.btn-sm { padding: 6px 14px; font-size: 12px; }
-.btn-xs { padding: 3px 9px; font-size: 11px; }
-.flex-end { display: flex; justify-content: flex-end; gap: 8px; }
-.flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-.shift-list-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--violet-light); border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 13px; border: 1px solid rgba(124,92,252,.2); }
-.shift-list-time { font-family: 'Rajdhani', sans-serif; font-weight: 600; flex: 1; color: var(--violet); }
-.shift-list-amt { font-family: 'Rajdhani', sans-serif; color: var(--ok); font-weight: 700; }
-.divider { border: none; border-top: 1.5px solid var(--border); margin: 14px 0; }
-
-.wage-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; font-size: 13px; }
-.wage-period { flex: 1; color: var(--text2); font-size: 12px; }
-.wage-rate { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: var(--accent); }
-
-.separator { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
-.section-label { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 10px; font-family: 'Nunito',sans-serif; }
-.empty-state { text-align: center; padding: 24px; color: var(--text3); font-size: 13px; }
-</style>
-</head>
-<body>
-
-<div class="header">
-  <div class="header-title">
-    <div class="header-icon">💰</div>
-    扶養内収入管理
-  </div>
-  <span class="year-badge" id="yearBadge">2026年</span>
-</div>
-
-<div class="container">
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('dash')">ダッシュボード</button>
-    <button class="tab" onclick="showTab('cal')">カレンダー</button>
-    <button class="tab" onclick="showTab('wage')">時給設定</button>
-    <button class="tab" onclick="showTab('cfg')">設定</button>
-  </div>
-
-  <div id="tab-dash">
-    <div id="alertArea"></div>
-    <div class="metric-grid">
-      <div class="metric"><div class="metric-label">年間収入</div><div class="metric-value" id="m-total">¥0円</div></div>
-      <div class="metric"><div class="metric-label">残り枠</div><div class="metric-value ok" id="m-remain">¥0円</div></div>
-      <div class="metric"><div class="metric-label">残り月平均</div><div class="metric-value" id="m-avg">¥0円</div></div>
-      <div class="metric"><div class="metric-label">今月の収入</div><div class="metric-value" id="m-cur">¥0円</div></div>
-    </div>
-    <div class="card">
-      <div class="progress-header">
-        <span style="font-size:13px;font-weight:700;color:var(--text2);font-family:'Nunito',sans-serif">年間進捗</span>
-        <span class="progress-pct" id="pct-label">0%</span>
-      </div>
-      <div class="pbar"><div class="pfill ok" id="pfill" style="width:0%"></div></div>
-      <div class="progress-footer"><span>¥0</span><span id="limit-label">上限 ¥1,230,000</span></div>
-    </div>
-    <div class="month-grid" id="monthRow"></div>
-    <div class="card" style="padding:16px 18px">
-      <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:10px;font-family:'Nunito',sans-serif">月別収入</div>
-      <div class="chart-wrap"><canvas id="incomeChart" role="img" aria-label="月別収入棒グラフ">月別収入データ</canvas></div>
-    </div>
-  </div>
-
-  <div id="tab-cal" style="display:none">
-    <div class="cal-nav">
-      <button class="cal-nav-btn" onclick="calPrev()">&#8249;</button>
-      <span class="cal-nav-title" id="calTitle">2026年1月</span>
-      <button class="cal-nav-btn" onclick="calNext()">&#8250;</button>
-    </div>
-    <div class="card" style="padding:12px">
-      <div class="cal-grid">
-        <div class="cal-dow">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div>
-        <div class="cal-dow">水</div><div class="cal-dow">木</div><div class="cal-dow">金</div><div class="cal-dow">土</div>
-      </div>
-      <div class="cal-grid" id="calBody" style="margin-top:3px"></div>
-    </div>
-    <div class="cal-summary" id="calSummary"></div>
-  </div>
-
-  <div id="tab-wage" style="display:none">
-    <div class="card">
-      <div class="card-title">時給を追加</div>
-      <div class="row3">
-        <div><label>開始日</label><input type="text" id="w-start" placeholder="2026/1/1"></div>
-        <div><label>終了日（空白=無期限）</label><input type="text" id="w-end" placeholder="2026/5/31"></div>
-        <div><label>時給（円）</label><input type="number" id="w-rate" placeholder="1120" min="0"></div>
-      </div>
-      <div class="flex-end"><button class="btn btn-primary" onclick="addWage()">＋ 追加</button></div>
-    </div>
-    <div class="card">
-      <div class="card-title">設定済み時給</div>
-      <div id="wageList"></div>
-    </div>
-  </div>
-
-  <div id="tab-cfg" style="display:none">
-    <div class="card">
-      <div class="section-label">年収上限</div>
-      <div style="margin-bottom:14px">
-        <div style="margin-bottom:8px">
-          <button class="btn" onclick="setLimit(1230000)" style="margin-right:6px;margin-bottom:6px">123万円</button>
-        </div>
-        <div class="flex-row">
-          <label style="display:inline;margin:0;white-space:nowrap">カスタム（円）：</label>
-          <input type="number" id="customLimit" placeholder="例：1230000" style="width:180px">
-          <button class="btn btn-primary" onclick="setCustomLimit()">設定</button>
-        </div>
-      </div>
-      <div style="font-size:13px;color:var(--text2)">現在の上限：<span id="limitDisp" style="font-weight:700;color:var(--text);font-family:'Rajdhani',sans-serif">¥1,230,000</span></div>
-      <div class="separator"></div>
-      <div class="section-label">対象年</div>
-      <div class="flex-row">
-        <input type="number" id="cfgYear" value="2026" min="2020" max="2040" style="width:110px">
-        <button class="btn" onclick="setYear()">適用</button>
-      </div>
-      <div class="separator"></div>
-      <div class="section-label" style="color:var(--danger)">データ管理</div>
-      <button class="btn btn-danger" onclick="clearAll()">全データを削除</button>
-    </div>
-  </div>
-</div>
-
-<!-- モーダル -->
-<div class="overlay" id="overlay" onclick="overlayClick(event)">
-  <div class="modal">
-    <div class="modal-title" id="modalTitle">シフト入力</div>
-    <div id="modalExisting"></div>
-    <hr class="divider">
-    <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:12px;font-family:'Nunito',sans-serif">新しいシフトを追加</div>
-
-    <!-- ピッカー -->
-    <div class="pickers-row" style="margin-bottom:14px;justify-content:center">
-      <div class="picker-group">
-        <div class="picker-group-label">開始</div>
-        <div class="picker-pair">
-          <div class="drum-col" id="p-sh">
-            <div class="drum-selector"></div>
-            <div class="drum-list" id="pl-sh"></div>
-            <div class="drum-mask"></div>
-          </div>
-          <span class="picker-colon">:</span>
-          <div class="drum-col" id="p-sm">
-            <div class="drum-selector"></div>
-            <div class="drum-list" id="pl-sm"></div>
-            <div class="drum-mask"></div>
-          </div>
-        </div>
-      </div>
-      <div style="align-self:center;font-size:22px;color:var(--text3);font-weight:700;padding-top:18px">〜</div>
-      <div class="picker-group">
-        <div class="picker-group-label">終了</div>
-        <div class="picker-pair">
-          <div class="drum-col" id="p-eh">
-            <div class="drum-selector"></div>
-            <div class="drum-list" id="pl-eh"></div>
-            <div class="drum-mask"></div>
-          </div>
-          <span class="picker-colon">:</span>
-          <div class="drum-col" id="p-em">
-            <div class="drum-selector"></div>
-            <div class="drum-list" id="pl-em"></div>
-            <div class="drum-mask"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="break-row">
-      <div><label>休憩（分）</label><input type="number" id="m-break" value="60" min="0"></div>
-      <div><label>メモ（任意）</label><input type="text" id="m-memo" placeholder=""></div>
-    </div>
-    <div class="flex-end">
-      <button class="btn btn-sm" onclick="closeModal()">キャンセル</button>
-      <button class="btn btn-primary btn-sm" onclick="saveShift()">追加</button>
-    </div>
-  </div>
-</div>
-
-<script>
-/* ===================== DATA ===================== */
 let S = { shifts:[], wages:[{start:'2026/1/1',end:'',rate:1120}], limit:1230000, year:2026 };
 let calYear=2026, calMonth=0, activeDate=null, chartInst=null;
+let dbUnsubscribe = null;
 
-function load(){ try{ const d=localStorage.getItem('fuyou_v5'); if(d) Object.assign(S,JSON.parse(d)); }catch(e){} }
-function save(){ try{ localStorage.setItem('fuyou_v5',JSON.stringify(S)); }catch(e){} }
+/* ===== FIREBASE SAVE/LOAD ===== */
+function saveToFirebase(){
+  set(ref(db, DATA_REF), S).catch(e => console.error('save error', e));
+}
+
+function startListening(){
+  if(dbUnsubscribe) dbUnsubscribe();
+  const r = ref(db, DATA_REF);
+  dbUnsubscribe = onValue(r, snap => {
+    if(snap.exists()){
+      const remote = snap.val();
+      if(remote.shifts) remote.shifts = Object.values(remote.shifts);
+      if(remote.wages)  remote.wages  = Object.values(remote.wages);
+      Object.assign(S, remote);
+    }
+    renderDash();
+    if(document.getElementById('tab-cal').style.display !== 'none') renderCal();
+    if(document.getElementById('tab-wage').style.display !== 'none') renderWageList();
+    showSyncStatus('同期済み');
+  }, e => {
+    showSyncStatus('同期エラー', true);
+  });
+}
+
+function showSyncStatus(msg, isErr=false){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.color = isErr ? '#e03060' : '#10a86a';
+}
+
+/* ===== AUTH ===== */
+onAuthStateChanged(auth, user => {
+  if(user){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = '';
+    document.getElementById('userEmail').textContent = user.email;
+    startListening();
+  } else {
+    document.getElementById('loginScreen').style.display = '';
+    document.getElementById('appScreen').style.display = 'none';
+    if(dbUnsubscribe){ dbUnsubscribe(); dbUnsubscribe=null; }
+  }
+});
+
+window.doLogin = function(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  document.getElementById('loginBtn').textContent = 'ログイン中...';
+  signInWithEmailAndPassword(auth, email, pass)
+    .catch(e => {
+      errEl.textContent = 'メールアドレスまたはパスワードが違います';
+      document.getElementById('loginBtn').textContent = 'ログイン';
+    });
+};
+
+window.doLogout = function(){
+  if(confirm('ログアウトしますか？')){ signOut(auth); }
+};
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none'){
+    doLogin();
+  }
+});
+
+/* ===== HELPERS ===== */
 function pd(s){ if(!s)return null; const m=s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/); return m?new Date(+m[1],+m[2]-1,+m[3]):null; }
 function pt(s){ if(!s)return null; const m=s.match(/(\d{1,2}):(\d{2})/); return m?+m[1]*60+ +m[2]:null; }
 function fm(n){ return '¥'+Math.round(n).toLocaleString('ja-JP')+'円'; }
@@ -426,8 +133,9 @@ function monthlyData(){
 }
 function shiftsOn(key){ return S.shifts.filter(s=>s.date===key); }
 
-/* ===================== DASHBOARD ===================== */
-function renderDash(){
+/* ===== DASHBOARD ===== */
+window.renderDash = function(){
+  if(!document.getElementById('m-total')) return;
   const{amt,hrs}=monthlyData();
   const total=amt.reduce((a,b)=>a+b,0);
   const remain=Math.max(0,S.limit-total);
@@ -462,7 +170,7 @@ function renderDash(){
       <div class="mhrs">${hrs[i].toFixed(1)}h</div>
     </div>`).join('');
   renderChart(amt);
-}
+};
 
 function renderChart(amt){
   const ctx=document.getElementById('incomeChart').getContext('2d');
@@ -484,8 +192,8 @@ function renderChart(amt){
   });
 }
 
-/* ===================== CALENDAR ===================== */
-function renderCal(){
+/* ===== CALENDAR ===== */
+window.renderCal = function(){
   const mn=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   document.getElementById('calTitle').textContent=calYear+'年'+mn[calMonth];
   const first=new Date(calYear,calMonth,1).getDay();
@@ -517,240 +225,519 @@ function renderCal(){
   const mTotal=mShifts.reduce((a,s)=>a+calcShift(s),0);
   const mHrs=mShifts.reduce((a,s)=>a+calcHours(s),0);
   document.getElementById('calSummary').textContent=mn[calMonth]+'合計：'+fm(mTotal)+'（'+mHrs.toFixed(1)+'時間 / '+mShifts.length+'日）';
-}
-function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
-function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
-function jumpMonth(m){ calYear=S.year; calMonth=m; showTab('cal'); }
+};
 
-/* ===================== iOS PICKER ===================== */
-const ITEM_H = 44;
-const HOURS = Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
-const MINS  = ['00','15','30','45'];
+window.calPrev=function(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); };
+window.calNext=function(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); };
+window.jumpMonth=function(m){ calYear=S.year; calMonth=m; showTab('cal'); };
 
-const pickerState = {};
+/* ===== iOS PICKER ===== */
+const ITEM_H=44;
+const HOURS=Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
+const MINS=['00','15','30','45'];
+const pickerState={};
 
-function buildPicker(listId, colId, items, initVal){
-  const listEl = document.getElementById(listId);
-  const colEl  = document.getElementById(colId);
-  if(!listEl || !colEl) return;
-
-  listEl.innerHTML = '';
-  const n = items.length;
-
-  // 3 copies for wraparound feel
-  const copies = 3;
-  for(let c=0; c<copies; c++){
-    items.forEach(v => {
-      const div = document.createElement('div');
-      div.className = 'drum-list-item';
-      div.textContent = v;
-      listEl.appendChild(div);
-    });
-  }
-
-  let initIdx = items.indexOf(initVal);
-  if(initIdx < 0) initIdx = 0;
-
-  // y=0 means top of list. Center row (index 2) shows selected item.
-  // Position: translateY = -(n + curIdx)*ITEM_H + 2*ITEM_H
-  function idxToY(idx){ return -((n + idx) * ITEM_H) + 2 * ITEM_H; }
-  function yToIdx(y){ return ((Math.round((-y + 2*ITEM_H) / ITEM_H) - n) % n + n) % n; }
-
-  let posY = idxToY(initIdx); // current pixel position
-  let velY = 0;               // pixels/ms
-  let rafId = null;
-  let isDragging = false;
-
+function buildPicker(listId,colId,items,initVal){
+  const listEl=document.getElementById(listId);
+  const colEl=document.getElementById(colId);
+  if(!listEl||!colEl) return;
+  listEl.innerHTML='';
+  const n=items.length;
+  for(let c=0;c<3;c++) items.forEach(v=>{
+    const div=document.createElement('div');
+    div.className='drum-list-item';
+    div.textContent=v;
+    listEl.appendChild(div);
+  });
+  let initIdx=items.indexOf(initVal); if(initIdx<0)initIdx=0;
+  function idxToY(idx){ return -((n+idx)*ITEM_H)+2*ITEM_H; }
+  function yToIdx(y){ return ((Math.round((-y+2*ITEM_H)/ITEM_H)-n)%n+n)%n; }
+  let posY=idxToY(initIdx), velY=0, rafId=null, isDragging=false;
   function updateDOM(){
-    listEl.style.transform = `translateY(${posY}px)`;
-    const ci = yToIdx(posY);
-    listEl.querySelectorAll('.drum-list-item').forEach((el, k) => {
-      const sel = (k % n) === ci;
-      el.style.color      = sel ? '#1c2a5e' : '#8496c8';
-      el.style.fontSize   = sel ? '22px'    : '15px';
-      el.style.fontWeight = sel ? '700'     : '400';
+    listEl.style.transform=`translateY(${posY}px)`;
+    const ci=yToIdx(posY);
+    listEl.querySelectorAll('.drum-list-item').forEach((el,k)=>{
+      const sel=(k%n)===ci;
+      el.style.color=sel?'#1c2a5e':'#8496c8';
+      el.style.fontSize=sel?'22px':'15px';
+      el.style.fontWeight=sel?'700':'400';
     });
   }
-
-  function snapNearest(){
-    const ci = yToIdx(posY);
-    return idxToY(ci);
-  }
-
+  function snapNearest(){ return idxToY(yToIdx(posY)); }
   function physicsLoop(){
-    if(isDragging){ rafId = requestAnimationFrame(physicsLoop); return; }
-
-    const target = snapNearest();
-    const dist   = target - posY;
-
-    // spring + friction
-    const spring  = 0.18;
-    const damping = 0.78;
-
-    velY = velY * damping + dist * spring;
-
-    if(Math.abs(velY) < 0.15 && Math.abs(dist) < 0.2){
-      posY = target;
-      velY = 0;
-      updateDOM();
-      rafId = null;
-      return;
+    if(isDragging){rafId=requestAnimationFrame(physicsLoop);return;}
+    const target=snapNearest(), dist=target-posY;
+    velY=velY*0.78+dist*0.18;
+    if(Math.abs(velY)<0.15&&Math.abs(dist)<0.2){
+      posY=target;velY=0;updateDOM();rafId=null;return;
     }
-
-    posY += velY;
-    updateDOM();
-    rafId = requestAnimationFrame(physicsLoop);
+    posY+=velY;updateDOM();
+    rafId=requestAnimationFrame(physicsLoop);
   }
-
-  function startLoop(){
-    if(!rafId) rafId = requestAnimationFrame(physicsLoop);
-  }
-
-  // Initial render
-  listEl.style.transition = 'none';
+  function startLoop(){ if(!rafId) rafId=requestAnimationFrame(physicsLoop); }
+  listEl.style.transition='none';
   updateDOM();
-
-  // --- Pointer events (mouse + touch unified) ---
-  let dragStartY  = 0;
-  let dragStartPos= 0;
-  let prevY       = 0;
-  let prevT       = 0;
-  let samples     = [];  // [{y,t}] rolling window for velocity
-
+  let dragStartY=0,dragStartPos=0,samples=[];
   function pointerStart(clientY){
-    isDragging  = true;
-    dragStartY  = clientY;
-    dragStartPos= posY;
-    prevY = clientY; prevT = performance.now();
-    samples = [{y:clientY, t:performance.now()}];
-    velY = 0;
-    if(!rafId) rafId = requestAnimationFrame(physicsLoop);
+    isDragging=true;dragStartY=clientY;dragStartPos=posY;
+    samples=[{y:clientY,t:performance.now()}];velY=0;
+    if(!rafId) rafId=requestAnimationFrame(physicsLoop);
   }
-
   function pointerMove(clientY){
     if(!isDragging) return;
-    const dy = clientY - dragStartY;
-    posY = dragStartPos + dy;
-
-    // wrap to keep in middle-copy zone
-    const minY = idxToY(n-1) - ITEM_H*2;
-    const maxY = idxToY(0)   + ITEM_H*2;
-    if(posY < minY) posY = minY;
-    if(posY > maxY) posY = maxY;
-
-    const now = performance.now();
-    samples.push({y:clientY, t:now});
-    // keep last 80ms
-    samples = samples.filter(s => now - s.t < 80);
+    posY=dragStartPos+(clientY-dragStartY);
+    const minY=idxToY(n-1)-ITEM_H*2, maxY=idxToY(0)+ITEM_H*2;
+    if(posY<minY)posY=minY; if(posY>maxY)posY=maxY;
+    const now=performance.now();
+    samples.push({y:clientY,t:now});
+    samples=samples.filter(s=>now-s.t<80);
     updateDOM();
   }
-
   function pointerEnd(){
     if(!isDragging) return;
-    isDragging = false;
-
-    // compute velocity from rolling samples
-    if(samples.length >= 2){
-      const first = samples[0];
-      const last  = samples[samples.length-1];
-      const dt    = last.t - first.t;
-      if(dt > 0) velY = (last.y - first.y) / dt * 16; // px per frame @60fps
-    } else {
-      velY = 0;
-    }
-
+    isDragging=false;
+    if(samples.length>=2){
+      const first=samples[0],last=samples[samples.length-1],dt=last.t-first.t;
+      if(dt>0) velY=(last.y-first.y)/dt*16;
+    } else velY=0;
     startLoop();
   }
-
-  colEl.addEventListener('mousedown', e=>{ pointerStart(e.clientY); e.preventDefault(); });
-  document.addEventListener('mousemove', e=>{ if(isDragging) pointerMove(e.clientY); });
-  document.addEventListener('mouseup',   ()=>{ if(isDragging) pointerEnd(); });
-
-  colEl.addEventListener('touchstart', e=>{ pointerStart(e.touches[0].clientY); }, {passive:true});
-  colEl.addEventListener('touchmove',  e=>{ pointerMove(e.touches[0].clientY); e.preventDefault(); }, {passive:false});
-  colEl.addEventListener('touchend',   ()=>{ pointerEnd(); });
-
-  colEl.addEventListener('wheel', e=>{
-    e.preventDefault();
-    velY += e.deltaY > 0 ? -60 : 60;
-    startLoop();
-  }, {passive:false});
-
-  pickerState[listId] = { getValue: () => items[yToIdx(posY)] };
+  colEl.addEventListener('mousedown',e=>{pointerStart(e.clientY);e.preventDefault();});
+  colEl._pickerMove=e=>{if(isDragging)pointerMove(e.clientY);};
+  colEl._pickerUp=()=>{if(isDragging)pointerEnd();};
+  colEl.addEventListener('touchstart',e=>{pointerStart(e.touches[0].clientY);},{passive:true});
+  colEl.addEventListener('touchmove',e=>{pointerMove(e.touches[0].clientY);e.preventDefault();},{passive:false});
+  colEl.addEventListener('touchend',()=>{pointerEnd();});
+  colEl.addEventListener('wheel',e=>{
+    e.preventDefault();velY+=e.deltaY>0?-60:60;startLoop();
+  },{passive:false});
+  pickerState[listId]={getValue:()=>items[yToIdx(posY)]};
 }
 
 function initPickers(){
-  buildPicker('pl-sh','p-sh', HOURS, '09');
-  buildPicker('pl-sm','p-sm', MINS,  '00');
-  buildPicker('pl-eh','p-eh', HOURS, '17');
-  buildPicker('pl-em','p-em', MINS,  '00');
+  buildPicker('pl-sh','p-sh',HOURS,'09');
+  buildPicker('pl-sm','p-sm',MINS,'00');
+  buildPicker('pl-eh','p-eh',HOURS,'17');
+  buildPicker('pl-em','p-em',MINS,'00');
+}
+function getPickerTime(hId,mId){
+  return `${pickerState[hId]?.getValue()?? '09'}:${pickerState[mId]?.getValue()?? '00'}`;
 }
 
-function getPickerTime(hId, mId){
-  const h = pickerState[hId]?.getValue() ?? '09';
-  const m = pickerState[mId]?.getValue() ?? '00';
-  return `${h}:${m}`;
-}
+/* ===== MODAL ===== */
+window.openModal=function(key){
+  activeDate=key;
+  const dt=pd(key);
+  const dow=['日','月','火','水','木','金','土'];
+  document.getElementById('modalTitle').textContent=`${dt.getMonth()+1}月${dt.getDate()}日（${dow[dt.getDay()]}）`;
+  const ss=shiftsOn(key);
+  const ex=document.getElementById('modalExisting');
+  if(ss.length){
+    ex.innerHTML='<div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:8px">登録済みシフト</div>'+
+      ss.map(s=>`<div class="shift-list-item"><span class="shift-list-time">${s.start}〜${s.end}</span><span class="shift-list-amt">${fm(calcShift(s))}</span><button class="btn btn-danger btn-xs" onclick="removeShift('${s.id}')">削除</button></div>`).join('');
+  } else ex.innerHTML='';
+  document.getElementById('m-break').value='60';
+  document.getElementById('m-memo').value='';
+  document.getElementById('overlay').className='overlay open';
+  initPickers();
+};
+window.closeModal=function(){document.getElementById('overlay').className='overlay';activeDate=null;};
+window.overlayClick=function(e){if(e.target===document.getElementById('overlay'))closeModal();};
+window.saveShift=function(){
+  if(!activeDate) return;
+  const start=getPickerTime('pl-sh','pl-sm');
+  const end=getPickerTime('pl-eh','pl-em');
+  const breakMin=+document.getElementById('m-break').value||0;
+  const memo=document.getElementById('m-memo').value.trim();
+  if(!S.shifts) S.shifts=[];
+  S.shifts.push({id:uid(),date:activeDate,start,end,breakMin,memo});
+  saveToFirebase(); closeModal(); renderCal(); renderDash();
+  showSyncStatus('保存中...');
+};
+window.removeShift=function(id){
+  S.shifts=S.shifts.filter(s=>s.id!==id);
+  saveToFirebase();
+  if(activeDate) openModal(activeDate);
+  renderCal(); renderDash();
+  showSyncStatus('保存中...');
+};
 
-  if(!S.wages.length){el.innerHTML='<div class="empty-state">時給が設定されていません</div>';return;}
+/* ===== WAGE ===== */
+window.renderWageList=function(){
+  const el=document.getElementById('wageList');
+  if(!S.wages||!S.wages.length){el.innerHTML='<div class="empty-state">時給が設定されていません</div>';return;}
   el.innerHTML=S.wages.sort((a,b)=>(pd(a.start)||0)-(pd(b.start)||0)).map((w,i)=>`
     <div class="wage-item">
       <div class="wage-period">${w.start} 〜 ${w.end||'無期限'}</div>
       <div class="wage-rate">¥${w.rate.toLocaleString()}/h</div>
       <button class="btn btn-danger btn-xs" onclick="removeWage(${i})">削除</button>
     </div>`).join('');
-}
-function addWage(){
+};
+window.addWage=function(){
   const start=document.getElementById('w-start').value.trim();
   const end=document.getElementById('w-end').value.trim();
   const rate=+document.getElementById('w-rate').value;
   if(!pd(start)||!rate){alert('開始日と時給を入力してください');return;}
+  if(!S.wages) S.wages=[];
   S.wages.push({start,end,rate});
-  save(); renderWageList(); renderDash();
+  saveToFirebase(); renderWageList(); renderDash();
   document.getElementById('w-start').value='';
   document.getElementById('w-end').value='';
   document.getElementById('w-rate').value='';
-}
-function removeWage(i){ S.wages.splice(i,1); save(); renderWageList(); renderDash(); }
+  showSyncStatus('保存中...');
+};
+window.removeWage=function(i){S.wages.splice(i,1);saveToFirebase();renderWageList();renderDash();};
 
-/* ===================== SETTINGS ===================== */
-function setLimit(v){
+/* ===== SETTINGS ===== */
+window.setLimit=function(v){
   S.limit=v;
   document.getElementById('limitDisp').textContent=fms(v);
-  save(); renderDash();
-}
-function setCustomLimit(){
+  saveToFirebase(); renderDash();
+};
+window.setCustomLimit=function(){
   const v=+document.getElementById('customLimit').value;
   if(v>0){setLimit(v);document.getElementById('customLimit').value='';}
-}
-function setYear(){
+};
+window.setYear=function(){
   const v=+document.getElementById('cfgYear').value;
-  if(v>=2020&&v<=2040){S.year=v;calYear=v;calMonth=0;save();renderDash();renderCal();document.getElementById('yearBadge').textContent=v+'年';}
-}
-function clearAll(){
-  if(confirm('全データを削除しますか？この操作は取り消せません。')){
-    S.shifts=[];S.wages=[{start:'2026/1/1',end:'',rate:1120}];S.limit=1230000;S.year=2026;
-    calYear=2026;calMonth=0;save();renderDash();renderCal();renderWageList();
+  if(v>=2020&&v<=2040){
+    S.year=v;calYear=v;calMonth=0;
+    saveToFirebase();renderDash();renderCal();
+    document.getElementById('yearBadge').textContent=v+'年';
   }
-}
+};
+window.clearAll=function(){
+  if(confirm('全データを削除しますか？この操作は取り消せません。')){
+    S={shifts:[],wages:[{start:'2026/1/1',end:'',rate:1120}],limit:1230000,year:2026};
+    calYear=2026;calMonth=0;
+    saveToFirebase();renderDash();renderCal();renderWageList();
+  }
+};
 
-/* ===================== TABS ===================== */
-function showTab(t){
+/* ===== TABS ===== */
+window.showTab=function(t){
   ['dash','cal','wage','cfg'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'':'none';});
   document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.toggle('active',['dash','cal','wage','cfg'][i]===t);});
   if(t==='dash') renderDash();
   if(t==='cal')  renderCal();
   if(t==='wage') renderWageList();
-}
+};
 
-document.addEventListener('keydown', e=>{
+document.addEventListener('mousemove',e=>{
+  document.querySelectorAll('.drum-col').forEach(col=>{if(col._pickerMove)col._pickerMove(e);});
+});
+document.addEventListener('mouseup',()=>{
+  document.querySelectorAll('.drum-col').forEach(col=>{if(col._pickerUp)col._pickerUp();});
+});
+document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.getElementById('overlay').classList.contains('open')) closeModal();
 });
 
-load();
-calYear=S.year;
 calMonth=new Date().getMonth();
-renderDash();
 </script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap');
+:root{
+  --bg:#e8f0fe;--surface:#fff;--surface2:#f0f4ff;--surface3:#dde8fd;
+  --border:#c2d0f5;--border2:#97b0ef;
+  --text:#1c2a5e;--text2:#4a5d9a;--text3:#8496c8;
+  --accent:#3b6ef0;--accent2:#5e8ef5;--accent-light:#dce8ff;
+  --teal:#0fb8c9;--teal-light:#d6f5f8;
+  --violet:#7c5cfc;--violet-light:#ede8ff;
+  --warn:#e07c20;--warn-light:#fff0e0;
+  --danger:#e03060;--danger-light:#ffe0e8;
+  --ok:#10a86a;--ok-light:#d6f5e8;
+  --radius:14px;--radius-sm:9px;--radius-xs:6px;
+  --item-h:44px;--visible:5;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:36px 32px;width:100%;max-width:360px;box-shadow:0 4px 24px rgba(59,110,240,.12)}
+.login-logo{text-align:center;font-size:32px;margin-bottom:8px}
+.login-title{text-align:center;font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px;font-family:'Nunito',sans-serif}
+.login-sub{text-align:center;font-size:12px;color:var(--text3);margin-bottom:24px}
+.login-label{font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;font-family:'Nunito',sans-serif}
+.login-input{width:100%;padding:10px 13px;font-size:14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;margin-bottom:12px}
+.login-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,110,240,.12)}
+.login-btn{width:100%;padding:11px;font-size:14px;font-weight:700;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'Nunito',sans-serif;margin-top:4px}
+.login-btn:hover{background:#2a5ae0}
+.login-err{font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px}
+
+/* HEADER */
+.header{background:var(--accent);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-title{font-size:15px;font-weight:700;color:#fff;font-family:'Nunito',sans-serif;display:flex;align-items:center;gap:8px}
+.header-icon{width:26px;height:26px;background:rgba(255,255,255,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.header-right{display:flex;align-items:center;gap:10px}
+.year-badge{font-size:12px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;padding:3px 12px;border-radius:20px;font-family:'Rajdhani',sans-serif}
+.sync-status{font-size:11px;font-weight:600;color:rgba(255,255,255,.8)}
+.user-info{display:flex;align-items:center;gap:8px}
+.user-email{font-size:11px;color:rgba(255,255,255,.8);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logout-btn{font-size:11px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:'Nunito',sans-serif}
+.logout-btn:hover{background:rgba(255,255,255,.3)}
+
+.container{max-width:760px;margin:0 auto;padding:20px 16px 80px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:4px;margin-bottom:20px;box-shadow:0 2px 12px rgba(59,110,240,.1)}
+.tab{flex:1;padding:9px 4px;font-size:13px;font-weight:700;border:none;border-radius:9px;cursor:pointer;background:transparent;color:var(--text2);font-family:'Nunito','Noto Sans JP',sans-serif;transition:all .18s;text-align:center}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(59,110,240,.35)}
+.tab:hover:not(.active){background:var(--surface2);color:var(--text)}
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;box-shadow:0 2px 10px rgba(59,110,240,.07)}
+.card-title{font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text);font-family:'Nunito',sans-serif}
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:520px){.metric-grid{grid-template-columns:repeat(4,1fr)}}
+.metric{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:13px 14px}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:5px;font-weight:700;font-family:'Nunito',sans-serif}
+.metric-value{font-size:16px;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--text)}
+.metric-value.ok{color:var(--ok)}.metric-value.warn{color:var(--warn)}.metric-value.danger{color:var(--danger)}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.progress-pct{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:var(--accent)}
+.pbar{height:12px;background:var(--surface3);border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.pfill{height:100%;border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.pfill.ok{background:linear-gradient(90deg,#10a86a,#0fb8c9)}
+.pfill.warn{background:linear-gradient(90deg,#e07c20,#f0a830)}
+.pfill.danger{background:linear-gradient(90deg,#e03060,#f05080)}
+.progress-footer{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:5px;font-family:'Rajdhani',sans-serif}
+.alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;font-weight:600;border-left:3px solid;font-family:'Nunito','Noto Sans JP',sans-serif}
+.alert.warn{background:var(--warn-light);color:var(--warn);border-color:var(--warn)}
+.alert.danger{background:var(--danger-light);color:var(--danger);border-color:var(--danger)}
+.alert.ok{background:var(--ok-light);color:var(--ok);border-color:var(--ok)}
+.month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+@media(min-width:480px){.month-grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:640px){.month-grid{grid-template-columns:repeat(6,1fr)}}
+.month-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 10px 8px;cursor:pointer;transition:all .15s}
+.month-card:hover{border-color:var(--accent2);transform:translateY(-1px);box-shadow:0 2px 8px rgba(59,110,240,.15)}
+.month-card.cur{border-color:var(--accent);border-width:2px;background:var(--accent-light)}
+.month-card.cur .mname{color:var(--accent)}
+.mname{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:3px;font-family:'Nunito',sans-serif}
+.mamt{font-size:12px;font-weight:700;color:var(--teal);font-family:'Rajdhani',sans-serif}
+.mhrs{font-size:10px;color:var(--text3);margin-top:2px;font-family:'Rajdhani',sans-serif}
+.chart-wrap{position:relative;width:100%;height:200px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav-title{font-size:17px;font-weight:800;color:var(--text);font-family:'Nunito',sans-serif}
+.cal-nav-btn{background:var(--surface);border:1.5px solid var(--border);border-radius:9px;width:36px;height:36px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--accent);font-weight:700}
+.cal-nav-btn:hover{background:var(--accent-light);border-color:var(--accent)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{text-align:center;font-size:11px;font-weight:800;padding:6px 0 5px;color:var(--text3);font-family:'Nunito',sans-serif}
+.cal-dow:first-child{color:var(--danger)}.cal-dow:last-child{color:var(--accent)}
+.cal-cell{min-height:64px;border:1.5px solid var(--border);border-radius:var(--radius-xs);padding:5px;cursor:pointer;background:var(--surface);transition:all .12s;overflow:hidden}
+.cal-cell:hover{border-color:var(--accent2);background:var(--accent-light)}
+.cal-cell.other{background:var(--surface2);opacity:.45;pointer-events:none}
+.cal-cell.today{border-color:var(--teal);border-width:2px;background:var(--teal-light)}
+.cal-cell.has-shift{background:var(--violet-light);border-color:var(--violet)}
+.day-num{font-size:11px;font-weight:800;color:var(--text2);line-height:1;font-family:'Nunito',sans-serif}
+.cal-cell.sun .day-num{color:var(--danger)}.cal-cell.sat .day-num{color:var(--accent)}
+.shift-badge{display:block;font-size:9.5px;color:var(--violet);background:rgba(124,92,252,.13);border-radius:3px;padding:1px 3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Rajdhani',sans-serif}
+.shift-amt{display:block;font-size:10px;font-weight:700;color:var(--ok);margin-top:2px;font-family:'Rajdhani',sans-serif}
+.cal-summary{font-size:12px;color:var(--text2);margin-top:8px;margin-bottom:4px;font-weight:600;font-family:'Rajdhani',sans-serif}
+.overlay{display:none;position:fixed;inset:0;background:rgba(28,42,94,.45);z-index:200;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);padding:22px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(59,110,240,.22);border:1.5px solid var(--border)}
+.modal-title{font-size:16px;font-weight:800;margin-bottom:14px;color:var(--text);font-family:'Nunito',sans-serif}
+.picker-section-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;font-family:'Nunito',sans-serif}
+.pickers-row{display:flex;gap:24px}
+.picker-group{display:flex;flex-direction:column;align-items:center;gap:6px}
+.picker-group-label{font-size:11px;color:var(--text3);font-weight:700;font-family:'Nunito',sans-serif}
+.picker-pair{display:flex;align-items:center;gap:2px}
+.picker-colon{font-size:24px;font-weight:700;color:var(--text2);line-height:1;padding:0 2px;align-self:center}
+.drum-col{width:52px;height:calc(var(--item-h)*var(--visible));overflow:hidden;position:relative;cursor:grab;user-select:none;-webkit-user-select:none}
+.drum-col:active{cursor:grabbing}
+.drum-list{position:absolute;left:0;right:0;top:0;will-change:transform}
+.drum-list-item{height:var(--item-h);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:500;color:var(--text3);user-select:none;-webkit-user-select:none}
+.drum-selector{position:absolute;top:calc(var(--item-h)*2);left:0;right:0;height:var(--item-h);pointer-events:none;z-index:2;border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);background:rgba(59,110,240,.06)}
+.drum-mask{position:absolute;inset:0;pointer-events:none;z-index:3;background:linear-gradient(to bottom,rgba(255,255,255,.92) 0%,rgba(255,255,255,.5) 20%,transparent 38%,transparent 62%,rgba(255,255,255,.5) 80%,rgba(255,255,255,.92) 100%)}
+label{font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;font-family:'Nunito',sans-serif}
+input[type=text],input[type=number],input[type=email],input[type=password],select{width:100%;padding:9px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;transition:border .15s}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,110,240,.12)}
+.form-group{margin-bottom:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.break-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.btn{padding:9px 18px;font-size:13px;font-weight:700;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;background:var(--surface);color:var(--text);font-family:'Nunito','Noto Sans JP',sans-serif;transition:all .15s}
+.btn:hover{background:var(--surface2);border-color:var(--border2)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#2a5ae0;border-color:#2a5ae0}
+.btn-danger{color:var(--danger)}.btn-danger:hover{background:var(--danger-light);border-color:var(--danger)}
+.btn-sm{padding:6px 14px;font-size:12px}.btn-xs{padding:3px 9px;font-size:11px}
+.flex-end{display:flex;justify-content:flex-end;gap:8px}
+.flex-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.shift-list-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--violet-light);border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px;border:1px solid rgba(124,92,252,.2)}
+.shift-list-time{font-family:'Rajdhani',sans-serif;font-weight:600;flex:1;color:var(--violet)}
+.shift-list-amt{font-family:'Rajdhani',sans-serif;color:var(--ok);font-weight:700}
+.divider{border:none;border-top:1.5px solid var(--border);margin:14px 0}
+.wage-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;font-size:13px}
+.wage-period{flex:1;color:var(--text2);font-size:12px}
+.wage-rate{font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)}
+.separator{border:none;border-top:1.5px solid var(--border);margin:18px 0}
+.section-label{font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;font-family:'Nunito',sans-serif}
+.empty-state{text-align:center;padding:24px;color:var(--text3);font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- ログイン画面 -->
+<div id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">💰</div>
+    <div class="login-title">扶養内収入管理</div>
+    <div class="login-sub">ログインしてください</div>
+    <label class="login-label">メールアドレス</label>
+    <input class="login-input" type="email" id="loginEmail" placeholder="example@email.com" autocomplete="email">
+    <label class="login-label">パスワード</label>
+    <input class="login-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">ログイン</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- アプリ本体 -->
+<div id="appScreen" style="display:none">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">
+        <div class="header-icon">💰</div>
+        扶養内収入管理
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="sync-status" id="syncStatus">接続中...</span>
+      <span class="year-badge" id="yearBadge">2026年</span>
+      <div class="user-info">
+        <span class="user-email" id="userEmail"></span>
+        <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('dash')">ダッシュボード</button>
+      <button class="tab" onclick="showTab('cal')">カレンダー</button>
+      <button class="tab" onclick="showTab('wage')">時給設定</button>
+      <button class="tab" onclick="showTab('cfg')">設定</button>
+    </div>
+
+    <div id="tab-dash">
+      <div id="alertArea"></div>
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-label">年間収入</div><div class="metric-value" id="m-total">¥0円</div></div>
+        <div class="metric"><div class="metric-label">残り枠</div><div class="metric-value ok" id="m-remain">¥0円</div></div>
+        <div class="metric"><div class="metric-label">残り月平均</div><div class="metric-value" id="m-avg">¥0円</div></div>
+        <div class="metric"><div class="metric-label">今月の収入</div><div class="metric-value" id="m-cur">¥0円</div></div>
+      </div>
+      <div class="card">
+        <div class="progress-header">
+          <span style="font-size:13px;font-weight:700;color:var(--text2);font-family:'Nunito',sans-serif">年間進捗</span>
+          <span class="progress-pct" id="pct-label">0%</span>
+        </div>
+        <div class="pbar"><div class="pfill ok" id="pfill" style="width:0%"></div></div>
+        <div class="progress-footer"><span>¥0</span><span id="limit-label">上限 ¥1,230,000</span></div>
+      </div>
+      <div class="month-grid" id="monthRow"></div>
+      <div class="card" style="padding:16px 18px">
+        <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:10px;font-family:'Nunito',sans-serif">月別収入</div>
+        <div class="chart-wrap"><canvas id="incomeChart" role="img" aria-label="月別収入棒グラフ">月別収入データ</canvas></div>
+      </div>
+    </div>
+
+    <div id="tab-cal" style="display:none">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calPrev()">&#8249;</button>
+        <span class="cal-nav-title" id="calTitle">2026年1月</span>
+        <button class="cal-nav-btn" onclick="calNext()">&#8250;</button>
+      </div>
+      <div class="card" style="padding:12px">
+        <div class="cal-grid">
+          <div class="cal-dow">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div>
+          <div class="cal-dow">水</div><div class="cal-dow">木</div><div class="cal-dow">金</div><div class="cal-dow">土</div>
+        </div>
+        <div class="cal-grid" id="calBody" style="margin-top:3px"></div>
+      </div>
+      <div class="cal-summary" id="calSummary"></div>
+    </div>
+
+    <div id="tab-wage" style="display:none">
+      <div class="card">
+        <div class="card-title">時給を追加</div>
+        <div class="row3">
+          <div><label>開始日</label><input type="text" id="w-start" placeholder="2026/1/1"></div>
+          <div><label>終了日（空白=無期限）</label><input type="text" id="w-end" placeholder="2026/5/31"></div>
+          <div><label>時給（円）</label><input type="number" id="w-rate" placeholder="1120" min="0"></div>
+        </div>
+        <div class="flex-end"><button class="btn btn-primary" onclick="addWage()">＋ 追加</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title">設定済み時給</div>
+        <div id="wageList"></div>
+      </div>
+    </div>
+
+    <div id="tab-cfg" style="display:none">
+      <div class="card">
+        <div class="section-label">年収上限</div>
+        <div style="margin-bottom:14px">
+          <div style="margin-bottom:8px">
+            <button class="btn" onclick="setLimit(1230000)" style="margin-right:6px;margin-bottom:6px">123万円</button>
+          </div>
+          <div class="flex-row">
+            <label style="display:inline;margin:0;white-space:nowrap">カスタム（円）：</label>
+            <input type="number" id="customLimit" placeholder="例：1230000" style="width:180px">
+            <button class="btn btn-primary" onclick="setCustomLimit()">設定</button>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--text2)">現在の上限：<span id="limitDisp" style="font-weight:700;color:var(--text);font-family:'Rajdhani',sans-serif">¥1,230,000</span></div>
+        <div class="separator"></div>
+        <div class="section-label">対象年</div>
+        <div class="flex-row">
+          <input type="number" id="cfgYear" value="2026" min="2020" max="2040" style="width:110px">
+          <button class="btn" onclick="setYear()">適用</button>
+        </div>
+        <div class="separator"></div>
+        <div class="section-label" style="color:var(--danger)">データ管理</div>
+        <button class="btn btn-danger" onclick="clearAll()">全データを削除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- シフト入力モーダル -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">シフト入力</div>
+    <div id="modalExisting"></div>
+    <hr class="divider">
+    <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:12px;font-family:'Nunito',sans-serif">新しいシフトを追加</div>
+    <div class="pickers-row" style="margin-bottom:14px;justify-content:center">
+      <div class="picker-group">
+        <div class="picker-group-label">開始</div>
+        <div class="picker-pair">
+          <div class="drum-col" id="p-sh"><div class="drum-selector"></div><div class="drum-list" id="pl-sh"></div><div class="drum-mask"></div></div>
+          <span class="picker-colon">:</span>
+          <div class="drum-col" id="p-sm"><div class="drum-selector"></div><div class="drum-list" id="pl-sm"></div><div class="drum-mask"></div></div>
+        </div>
+      </div>
+      <div style="align-self:center;font-size:22px;color:var(--text3);font-weight:700;padding-top:18px">〜</div>
+      <div class="picker-group">
+        <div class="picker-group-label">終了</div>
+        <div class="picker-pair">
+          <div class="drum-col" id="p-eh"><div class="drum-selector"></div><div class="drum-list" id="pl-eh"></div><div class="drum-mask"></div></div>
+          <span class="picker-colon">:</span>
+          <div class="drum-col" id="p-em"><div class="drum-selector"></div><div class="drum-list" id="pl-em"></div><div class="drum-mask"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="break-row">
+      <div><label>休憩（分）</label><input type="number" id="m-break" value="60" min="0"></div>
+      <div><label>メモ（任意）</label><input type="text" id="m-memo" placeholder=""></div>
+    </div>
+    <div class="flex-end">
+      <button class="btn btn-sm" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary btn-sm" onclick="saveShift()">追加</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
