@@ -234,7 +234,7 @@ window.jumpMonth=function(m){ calYear=S.year; calMonth=m; showTab('cal'); };
 /* ===== iOS PICKER ===== */
 const ITEM_H=44;
 const HOURS=Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
-const MINS=['00','15','30','45'];
+const MINS=['00','05','10','15','20','25','30','35','40','45','50','55'];
 const pickerState={};
 
 function buildPicker(listId,colId,items,initVal){
@@ -319,13 +319,21 @@ function buildPicker(listId,colId,items,initVal){
 }
 
 function initPickers(){
-  buildPicker('pl-sh','p-sh',HOURS,'09');
-  buildPicker('pl-sm','p-sm',MINS,'00');
-  buildPicker('pl-eh','p-eh',HOURS,'17');
-  buildPicker('pl-em','p-em',MINS,'00');
+  function fillSel(id, items, defVal){
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.innerHTML=items.map(v=>`<option value="${v}" ${v===defVal?'selected':''}>${v}</option>`).join('');
+  }
+  fillSel('sel-sh',HOURS,'09');
+  fillSel('sel-sm',MINS,'00');
+  fillSel('sel-eh',HOURS,'17');
+  fillSel('sel-em',MINS,'00');
 }
 function getPickerTime(hId,mId){
-  return `${pickerState[hId]?.getValue()?? '09'}:${pickerState[mId]?.getValue()?? '00'}`;
+  const hMap={'pl-sh':'sel-sh','pl-sm':'sel-sm','pl-eh':'sel-eh','pl-em':'sel-em'};
+  const h=document.getElementById(hMap[hId])?.value??'09';
+  const m=document.getElementById(hMap[mId])?.value??'00';
+  return `${h}:${m}`;
 }
 
 /* ===== MODAL ===== */
@@ -679,7 +687,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .day-num{font-size:10px;font-weight:700;color:#00aaff80;line-height:1;font-family:'Orbitron',sans-serif}
 .cal-cell.sun .day-num{color:#ff4466}.cal-cell.sat .day-num{color:#66ccff}
 .shift-badge{display:block;font-size:10px;color:#aaddff;background:#00aaff18;border-radius:2px;padding:1px 3px;margin-top:2px;white-space:pre-line;line-height:1.35;font-family:'Quantico',sans-serif;font-weight:400}
-.shift-amt{display:block;font-size:10px;font-weight:700;color:#ffffff;margin-top:1px;font-family:'Quantico',sans-serif;text-shadow:0 0 8px #00aaff,0 0 16px #00aaff80}
+.shift-amt{display:block;font-size:8px;font-weight:700;color:#ffffff;margin-top:1px;font-family:'Quantico',sans-serif;text-shadow:0 0 8px #00aaff,0 0 16px #00aaff80}
 .cal-summary{font-size:11px;color:#0099ff80;margin-top:6px;margin-bottom:4px;font-weight:400;font-family:'Quantico',sans-serif;text-align:right}
 .overlay{display:none;position:fixed;inset:0;background:rgba(28,42,94,.45);z-index:200;align-items:center;justify-content:center;padding:16px}
 .overlay.open{display:flex}
@@ -909,22 +917,21 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
     <div id="modalExisting"></div>
     <hr class="divider">
     <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:12px;font-family:'Nunito',sans-serif">新しいシフトを追加</div>
-    <div class="pickers-row" style="margin-bottom:14px;justify-content:center">
-      <div class="picker-group">
-        <div class="picker-group-label">開始</div>
-        <div class="picker-pair">
-          <div class="drum-col" id="p-sh"><div class="drum-selector"></div><div class="drum-list" id="pl-sh"></div><div class="drum-mask"></div></div>
-          <span class="picker-colon">:</span>
-          <div class="drum-col" id="p-sm"><div class="drum-selector"></div><div class="drum-list" id="pl-sm"></div><div class="drum-mask"></div></div>
+    <div class="row2" style="margin-bottom:12px">
+      <div>
+        <label>開始時刻</label>
+        <div style="display:flex;gap:4px;align-items:center">
+          <select id="sel-sh" style="flex:1;min-width:0"></select>
+          <span style="color:var(--text2);font-weight:700;font-size:16px">:</span>
+          <select id="sel-sm" style="width:64px"></select>
         </div>
       </div>
-      <div style="align-self:center;font-size:22px;color:var(--text3);font-weight:700;padding-top:18px">〜</div>
-      <div class="picker-group">
-        <div class="picker-group-label">終了</div>
-        <div class="picker-pair">
-          <div class="drum-col" id="p-eh"><div class="drum-selector"></div><div class="drum-list" id="pl-eh"></div><div class="drum-mask"></div></div>
-          <span class="picker-colon">:</span>
-          <div class="drum-col" id="p-em"><div class="drum-selector"></div><div class="drum-list" id="pl-em"></div><div class="drum-mask"></div></div>
+      <div>
+        <label>終了時刻</label>
+        <div style="display:flex;gap:4px;align-items:center">
+          <select id="sel-eh" style="flex:1;min-width:0"></select>
+          <span style="color:var(--text2);font-weight:700;font-size:16px">:</span>
+          <select id="sel-em" style="width:64px"></select>
         </div>
       </div>
     </div>
