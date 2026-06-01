@@ -34,6 +34,8 @@
   --radius: 14px;
   --radius-sm: 9px;
   --radius-xs: 6px;
+  --item-h: 44px;
+  --visible: 5;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,7 +49,7 @@ body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: va
 }
 .header-title { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; font-family: 'Nunito', sans-serif; }
 .header-icon { width: 28px; height: 28px; background: rgba(255,255,255,.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
-.year-badge { font-size: 12px; font-weight: 700; background: rgba(255,255,255,.2); color: #fff; padding: 4px 14px; border-radius: 20px; font-family: 'DM Mono', monospace; letter-spacing: .5px; }
+.year-badge { font-size: 12px; font-weight: 700; background: rgba(255,255,255,.2); color: #fff; padding: 4px 14px; border-radius: 20px; font-family: 'DM Mono', monospace; }
 
 .container { max-width: 760px; margin: 0 auto; padding: 20px 16px 80px; }
 
@@ -62,7 +64,7 @@ body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: va
 .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
 @media(min-width:520px){ .metric-grid { grid-template-columns: repeat(4, 1fr); } }
 .metric { background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 13px 14px; }
-.metric-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; font-weight: 700; font-family: 'Nunito', sans-serif; letter-spacing: .3px; }
+.metric-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; font-weight: 700; font-family: 'Nunito', sans-serif; }
 .metric-value { font-size: 16px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text); }
 .metric-value.ok { color: var(--ok); }
 .metric-value.warn { color: var(--warn); }
@@ -72,36 +74,35 @@ body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: va
 .progress-pct { font-family: 'DM Mono', monospace; font-weight: 700; font-size: 15px; color: var(--accent); }
 .pbar { height: 12px; background: var(--surface3); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
 .pfill { height: 100%; border-radius: 6px; transition: width .5s cubic-bezier(.4,0,.2,1); }
-.pfill.ok { background: linear-gradient(90deg, #10a86a, #0fb8c9); }
-.pfill.warn { background: linear-gradient(90deg, #e07c20, #f0a830); }
-.pfill.danger { background: linear-gradient(90deg, #e03060, #f05080); }
+.pfill.ok { background: linear-gradient(90deg,#10a86a,#0fb8c9); }
+.pfill.warn { background: linear-gradient(90deg,#e07c20,#f0a830); }
+.pfill.danger { background: linear-gradient(90deg,#e03060,#f05080); }
 .progress-footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-top: 5px; font-family: 'DM Mono', monospace; }
 
-.alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 14px; font-weight: 600; border-left: 3px solid; font-family: 'Nunito', 'Noto Sans JP', sans-serif; }
+.alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 14px; font-weight: 600; border-left: 3px solid; font-family: 'Nunito','Noto Sans JP',sans-serif; }
 .alert.warn { background: var(--warn-light); color: var(--warn); border-color: var(--warn); }
 .alert.danger { background: var(--danger-light); color: var(--danger); border-color: var(--danger); }
 .alert.ok { background: var(--ok-light); color: var(--ok); border-color: var(--ok); }
 
-.month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
-@media(min-width:480px){ .month-grid { grid-template-columns: repeat(4, 1fr); } }
-@media(min-width:640px){ .month-grid { grid-template-columns: repeat(6, 1fr); } }
+.month-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+@media(min-width:480px){ .month-grid { grid-template-columns: repeat(4,1fr); } }
+@media(min-width:640px){ .month-grid { grid-template-columns: repeat(6,1fr); } }
 .month-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 10px 8px; cursor: pointer; transition: all .15s; }
-.month-card:hover { border-color: var(--accent2); box-shadow: 0 2px 8px rgba(59,110,240,.15); transform: translateY(-1px); }
+.month-card:hover { border-color: var(--accent2); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(59,110,240,.15); }
 .month-card.cur { border-color: var(--accent); border-width: 2px; background: var(--accent-light); }
 .month-card.cur .mname { color: var(--accent); }
-.mname { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 3px; font-family: 'Nunito', sans-serif; }
-.mamt { font-size: 12px; font-weight: 700; color: var(--teal); font-family: 'DM Mono', monospace; }
-.mhrs { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.mname { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 3px; font-family: 'Nunito',sans-serif; }
+.mamt { font-size: 12px; font-weight: 700; color: var(--teal); font-family: 'DM Mono',monospace; }
+.mhrs { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono',monospace; }
 
 .chart-wrap { position: relative; width: 100%; height: 200px; }
 
-/* Calendar */
 .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.cal-nav-title { font-size: 17px; font-weight: 800; color: var(--text); font-family: 'Nunito', sans-serif; }
+.cal-nav-title { font-size: 17px; font-weight: 800; color: var(--text); font-family: 'Nunito',sans-serif; }
 .cal-nav-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: 9px; width: 36px; height: 36px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all .15s; color: var(--accent); font-weight: 700; }
 .cal-nav-btn:hover { background: var(--accent-light); border-color: var(--accent); }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-.cal-dow { text-align: center; font-size: 11px; font-weight: 800; padding: 6px 0 5px; color: var(--text3); font-family: 'Nunito', sans-serif; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+.cal-dow { text-align: center; font-size: 11px; font-weight: 800; padding: 6px 0 5px; color: var(--text3); font-family: 'Nunito',sans-serif; }
 .cal-dow:first-child { color: var(--danger); }
 .cal-dow:last-child { color: var(--accent); }
 .cal-cell { min-height: 64px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); padding: 5px; cursor: pointer; background: var(--surface); transition: all .12s; overflow: hidden; }
@@ -109,45 +110,100 @@ body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: va
 .cal-cell.other { background: var(--surface2); opacity: .45; pointer-events: none; }
 .cal-cell.today { border-color: var(--teal); border-width: 2px; background: var(--teal-light); }
 .cal-cell.has-shift { background: var(--violet-light); border-color: var(--violet); }
-.day-num { font-size: 11px; font-weight: 800; color: var(--text2); line-height: 1; font-family: 'Nunito', sans-serif; }
+.day-num { font-size: 11px; font-weight: 800; color: var(--text2); line-height: 1; font-family: 'Nunito',sans-serif; }
 .cal-cell.sun .day-num { color: var(--danger); }
 .cal-cell.sat .day-num { color: var(--accent); }
-.shift-badge { display: block; font-size: 9.5px; color: var(--violet); background: rgba(124,92,252,.13); border-radius: 3px; padding: 1px 3px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'DM Mono', monospace; }
-.shift-amt { display: block; font-size: 10px; font-weight: 700; color: var(--ok); margin-top: 2px; font-family: 'DM Mono', monospace; }
-.cal-summary { font-size: 12px; color: var(--text2); margin-top: 8px; margin-bottom: 4px; font-weight: 600; font-family: 'DM Mono', monospace; }
+.shift-badge { display: block; font-size: 9.5px; color: var(--violet); background: rgba(124,92,252,.13); border-radius: 3px; padding: 1px 3px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'DM Mono',monospace; }
+.shift-amt { display: block; font-size: 10px; font-weight: 700; color: var(--ok); margin-top: 2px; font-family: 'DM Mono',monospace; }
+.cal-summary { font-size: 12px; color: var(--text2); margin-top: 8px; margin-bottom: 4px; font-weight: 600; font-family: 'DM Mono',monospace; }
 
-/* Modal */
+/* ===== OVERLAY & MODAL ===== */
 .overlay { display: none; position: fixed; inset: 0; background: rgba(28,42,94,.45); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
 .overlay.open { display: flex; }
-.modal { background: var(--surface); border-radius: var(--radius); padding: 22px; width: 100%; max-width: 380px; box-shadow: 0 8px 40px rgba(59,110,240,.22); border: 1.5px solid var(--border); }
-.modal-title { font-size: 16px; font-weight: 800; margin-bottom: 14px; color: var(--text); font-family: 'Nunito', sans-serif; }
+.modal { background: var(--surface); border-radius: var(--radius); padding: 22px; width: 100%; max-width: 400px; box-shadow: 0 8px 40px rgba(59,110,240,.22); border: 1.5px solid var(--border); }
+.modal-title { font-size: 16px; font-weight: 800; margin-bottom: 14px; color: var(--text); font-family: 'Nunito',sans-serif; }
 
-/* Drum roll picker */
-.drum-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-.drum-label { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 5px; font-family: 'Nunito', sans-serif; }
-.drum-wrap { display: flex; gap: 4px; align-items: center; }
-.drum { width: 58px; height: 120px; overflow: hidden; border: 1.5px solid var(--border); border-radius: 9px; position: relative; background: var(--surface2); cursor: grab; user-select: none; }
-.drum.grabbing { cursor: grabbing; }
-.drum-inner { position: absolute; top: 0; left: 0; width: 100%; transition: none; }
-.drum-item { height: 40px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text3); transition: color .1s, font-size .1s; }
-.drum-item.selected { color: var(--accent); font-size: 22px; }
-.drum-sep { font-size: 22px; font-weight: 800; color: var(--text2); align-self: center; padding-bottom: 0; }
-.drum-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-.drum-overlay::before, .drum-overlay::after { content: ''; position: absolute; left: 0; right: 0; height: 40px; z-index: 2; }
-.drum-overlay::before { top: 0; background: linear-gradient(to bottom, var(--surface2), transparent); }
-.drum-overlay::after { bottom: 0; background: linear-gradient(to top, var(--surface2), transparent); }
-.drum-highlight { position: absolute; top: 40px; left: 4px; right: 4px; height: 40px; border-radius: 6px; background: var(--accent-light); border: 1.5px solid var(--border2); pointer-events: none; z-index: 1; }
+/* ===== iOS-STYLE PICKER ===== */
+.picker-section { margin-bottom: 14px; }
+.picker-section-title { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 6px; font-family: 'Nunito',sans-serif; }
+.pickers-row { display: flex; gap: 24px; }
+.picker-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.picker-group-label { font-size: 11px; color: var(--text3); font-weight: 700; font-family: 'Nunito',sans-serif; }
+.picker-pair { display: flex; align-items: center; gap: 2px; }
+.picker-colon { font-size: 24px; font-weight: 700; color: var(--text2); line-height: 1; padding: 0 2px; align-self: center; }
+
+/* Single drum column */
+.drum-col {
+  width: 52px;
+  height: calc(var(--item-h) * var(--visible));
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.drum-col:active { cursor: grabbing; }
+
+.drum-list {
+  position: absolute;
+  left: 0; right: 0;
+  top: 0;
+  will-change: transform;
+}
+.drum-list-item {
+  height: var(--item-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text3);
+  transition: color .1s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Selection band */
+.drum-selector {
+  position: absolute;
+  top: calc(var(--item-h) * 2);
+  left: 0; right: 0;
+  height: var(--item-h);
+  pointer-events: none;
+  z-index: 2;
+  border-top: 1px solid var(--border2);
+  border-bottom: 1px solid var(--border2);
+  background: rgba(59,110,240,.06);
+}
+
+/* Fade mask */
+.drum-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,.92) 0%,
+    rgba(255,255,255,.5) 20%,
+    transparent 38%,
+    transparent 62%,
+    rgba(255,255,255,.5) 80%,
+    rgba(255,255,255,.92) 100%
+  );
+}
 
 /* Forms */
-label { font-size: 12px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 4px; font-family: 'Nunito', sans-serif; }
-input[type=text], input[type=number], select { width: 100%; padding: 9px 12px; font-size: 13px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; outline: none; transition: border .15s; }
+label { font-size: 12px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 4px; font-family: 'Nunito',sans-serif; }
+input[type=text], input[type=number], select { width: 100%; padding: 9px 12px; font-size: 13px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'Noto Sans JP',sans-serif; outline: none; transition: border .15s; }
 input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,110,240,.12); }
 .form-group { margin-bottom: 12px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.break-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 
-/* Buttons */
-.btn { padding: 9px 18px; font-size: 13px; font-weight: 700; border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); color: var(--text); font-family: 'Nunito', 'Noto Sans JP', sans-serif; transition: all .15s; }
+.btn { padding: 9px 18px; font-size: 13px; font-weight: 700; border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); color: var(--text); font-family: 'Nunito','Noto Sans JP',sans-serif; transition: all .15s; }
 .btn:hover { background: var(--surface2); border-color: var(--border2); }
 .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 .btn-primary:hover { background: #2a5ae0; border-color: #2a5ae0; }
@@ -158,22 +214,18 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
 .flex-end { display: flex; justify-content: flex-end; gap: 8px; }
 .flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-/* Shift list in modal */
 .shift-list-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--violet-light); border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 13px; border: 1px solid rgba(124,92,252,.2); }
-.shift-list-time { font-family: 'DM Mono', monospace; font-weight: 600; flex: 1; color: var(--violet); }
-.shift-list-amt { font-family: 'DM Mono', monospace; color: var(--ok); font-weight: 700; }
+.shift-list-time { font-family: 'DM Mono',monospace; font-weight: 600; flex: 1; color: var(--violet); }
+.shift-list-amt { font-family: 'DM Mono',monospace; color: var(--ok); font-weight: 700; }
 .divider { border: none; border-top: 1.5px solid var(--border); margin: 14px 0; }
 
-/* Wage list */
 .wage-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; font-size: 13px; }
 .wage-period { flex: 1; color: var(--text2); font-size: 12px; }
-.wage-rate { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--accent); }
+.wage-rate { font-family: 'DM Mono',monospace; font-weight: 700; color: var(--accent); }
 
 .separator { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
-.section-label { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 10px; font-family: 'Nunito', sans-serif; }
+.section-label { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 10px; font-family: 'Nunito',sans-serif; }
 .empty-state { text-align: center; padding: 24px; color: var(--text3); font-size: 13px; }
-
-.break-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -194,14 +246,13 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
     <button class="tab" onclick="showTab('cfg')">設定</button>
   </div>
 
-  <!-- ダッシュボード -->
   <div id="tab-dash">
     <div id="alertArea"></div>
     <div class="metric-grid">
-      <div class="metric"><div class="metric-label">年間収入</div><div class="metric-value" id="m-total">¥0</div></div>
-      <div class="metric"><div class="metric-label">残り枠</div><div class="metric-value ok" id="m-remain">¥0</div></div>
-      <div class="metric"><div class="metric-label">残り月平均</div><div class="metric-value" id="m-avg">¥0</div></div>
-      <div class="metric"><div class="metric-label">今月の収入</div><div class="metric-value" id="m-cur">¥0</div></div>
+      <div class="metric"><div class="metric-label">年間収入</div><div class="metric-value" id="m-total">¥0円</div></div>
+      <div class="metric"><div class="metric-label">残り枠</div><div class="metric-value ok" id="m-remain">¥0円</div></div>
+      <div class="metric"><div class="metric-label">残り月平均</div><div class="metric-value" id="m-avg">¥0円</div></div>
+      <div class="metric"><div class="metric-label">今月の収入</div><div class="metric-value" id="m-cur">¥0円</div></div>
     </div>
     <div class="card">
       <div class="progress-header">
@@ -218,7 +269,6 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
     </div>
   </div>
 
-  <!-- カレンダー -->
   <div id="tab-cal" style="display:none">
     <div class="cal-nav">
       <button class="cal-nav-btn" onclick="calPrev()">&#8249;</button>
@@ -235,7 +285,6 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
     <div class="cal-summary" id="calSummary"></div>
   </div>
 
-  <!-- 時給設定 -->
   <div id="tab-wage" style="display:none">
     <div class="card">
       <div class="card-title">時給を追加</div>
@@ -252,13 +301,12 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
     </div>
   </div>
 
-  <!-- 設定 -->
   <div id="tab-cfg" style="display:none">
     <div class="card">
       <div class="section-label">年収上限</div>
       <div style="margin-bottom:14px">
         <div style="margin-bottom:8px">
-          <button class="btn" id="preset-123" onclick="setLimit(1230000)" style="margin-right:6px;margin-bottom:6px">123万円</button>
+          <button class="btn" onclick="setLimit(1230000)" style="margin-right:6px;margin-bottom:6px">123万円</button>
         </div>
         <div class="flex-row">
           <label style="display:inline;margin:0;white-space:nowrap">カスタム（円）：</label>
@@ -267,14 +315,12 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
         </div>
       </div>
       <div style="font-size:13px;color:var(--text2)">現在の上限：<span id="limitDisp" style="font-weight:700;color:var(--text);font-family:'DM Mono',monospace">¥1,230,000</span></div>
-
       <div class="separator"></div>
       <div class="section-label">対象年</div>
       <div class="flex-row">
         <input type="number" id="cfgYear" value="2026" min="2020" max="2040" style="width:110px">
         <button class="btn" onclick="setYear()">適用</button>
       </div>
-
       <div class="separator"></div>
       <div class="section-label" style="color:var(--danger)">データ管理</div>
       <button class="btn btn-danger" onclick="clearAll()">全データを削除</button>
@@ -290,30 +336,48 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
     <hr class="divider">
     <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:12px;font-family:'Nunito',sans-serif">新しいシフトを追加</div>
 
-    <!-- ドラムロール時刻選択 -->
-    <div class="drum-row">
-      <div>
-        <div class="drum-label">開始時刻</div>
-        <div class="drum-wrap" id="drum-start-wrap"></div>
+    <!-- ピッカー -->
+    <div class="pickers-row" style="margin-bottom:14px;justify-content:center">
+      <div class="picker-group">
+        <div class="picker-group-label">開始</div>
+        <div class="picker-pair">
+          <div class="drum-col" id="p-sh">
+            <div class="drum-selector"></div>
+            <div class="drum-list" id="pl-sh"></div>
+            <div class="drum-mask"></div>
+          </div>
+          <span class="picker-colon">:</span>
+          <div class="drum-col" id="p-sm">
+            <div class="drum-selector"></div>
+            <div class="drum-list" id="pl-sm"></div>
+            <div class="drum-mask"></div>
+          </div>
+        </div>
       </div>
-      <div>
-        <div class="drum-label">終了時刻</div>
-        <div class="drum-wrap" id="drum-end-wrap"></div>
+      <div style="align-self:center;font-size:22px;color:var(--text3);font-weight:700;padding-top:18px">〜</div>
+      <div class="picker-group">
+        <div class="picker-group-label">終了</div>
+        <div class="picker-pair">
+          <div class="drum-col" id="p-eh">
+            <div class="drum-selector"></div>
+            <div class="drum-list" id="pl-eh"></div>
+            <div class="drum-mask"></div>
+          </div>
+          <span class="picker-colon">:</span>
+          <div class="drum-col" id="p-em">
+            <div class="drum-selector"></div>
+            <div class="drum-list" id="pl-em"></div>
+            <div class="drum-mask"></div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="break-row">
-      <div class="form-group" style="margin-bottom:0">
-        <label>休憩（分）</label>
-        <input type="number" id="m-break" value="60" min="0">
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label>メモ（任意）</label>
-        <input type="text" id="m-memo" placeholder="">
-      </div>
+      <div><label>休憩（分）</label><input type="number" id="m-break" value="60" min="0"></div>
+      <div><label>メモ（任意）</label><input type="text" id="m-memo" placeholder=""></div>
     </div>
-
-    <div class="flex-end" style="margin-top:14px">
+    <div class="flex-end">
       <button class="btn btn-sm" onclick="closeModal()">キャンセル</button>
       <button class="btn btn-primary btn-sm" onclick="saveShift()">追加</button>
     </div>
@@ -321,366 +385,376 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
 </div>
 
 <script>
-let S = { shifts: [], wages: [{ start: '2026/1/1', end: '', rate: 1120 }], limit: 1230000, year: 2026 };
-let calYear = 2026, calMonth = 0, activeDate = null, chartInst = null;
+/* ===================== DATA ===================== */
+let S = { shifts:[], wages:[{start:'2026/1/1',end:'',rate:1120}], limit:1230000, year:2026 };
+let calYear=2026, calMonth=0, activeDate=null, chartInst=null;
 
-function load() {
-  try { const d = localStorage.getItem('fuyou_v4'); if (d) Object.assign(S, JSON.parse(d)); } catch(e) {}
-}
-function save() {
-  try { localStorage.setItem('fuyou_v4', JSON.stringify(S)); } catch(e) {}
-}
-function pd(s) {
-  if (!s) return null;
-  const m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
-  return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
-}
-function pt(s) {
-  if (!s) return null;
-  const m = s.match(/(\d{1,2}):(\d{2})/);
-  return m ? +m[1]*60 + +m[2] : null;
-}
-function fm(n) { return '¥' + Math.round(n).toLocaleString('ja-JP') + '円'; }
-function fmShort(n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); }
-function dateKey(y, mo, d) { return `${y}/${String(mo+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`; }
-function uid() { return Math.random().toString(36).slice(2,9); }
+function load(){ try{ const d=localStorage.getItem('fuyou_v5'); if(d) Object.assign(S,JSON.parse(d)); }catch(e){} }
+function save(){ try{ localStorage.setItem('fuyou_v5',JSON.stringify(S)); }catch(e){} }
+function pd(s){ if(!s)return null; const m=s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/); return m?new Date(+m[1],+m[2]-1,+m[3]):null; }
+function pt(s){ if(!s)return null; const m=s.match(/(\d{1,2}):(\d{2})/); return m?+m[1]*60+ +m[2]:null; }
+function fm(n){ return '¥'+Math.round(n).toLocaleString('ja-JP')+'円'; }
+function fms(n){ return '¥'+Math.round(n).toLocaleString('ja-JP'); }
+function dateKey(y,mo,d){ return `${y}/${String(mo+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`; }
+function uid(){ return Math.random().toString(36).slice(2,9); }
 
-function wageFor(dateStr) {
-  const dt = pd(dateStr); if (!dt) return 1000;
-  let best = null;
-  for (const w of S.wages) {
-    const ws = pd(w.start), we = w.end ? pd(w.end) : new Date(2099,11,31);
-    if (ws && we && dt >= ws && dt <= we) { if (!best || pd(w.start) >= pd(best.start)) best = w; }
+function wageFor(ds){
+  const dt=pd(ds); if(!dt) return 1000;
+  let best=null;
+  for(const w of S.wages){
+    const ws=pd(w.start), we=w.end?pd(w.end):new Date(2099,11,31);
+    if(ws&&we&&dt>=ws&&dt<=we){ if(!best||pd(w.start)>=pd(best.start)) best=w; }
   }
-  return best ? best.rate : 1000;
+  return best?best.rate:1000;
 }
-function calcShift(sh) {
-  const st = pt(sh.start), et = pt(sh.end); if (st === null || et === null) return 0;
-  let m = et - st; if (m < 0) m += 1440; m -= (sh.breakMin || 0);
-  return Math.max(0, m/60) * wageFor(sh.date);
+function calcShift(sh){
+  const st=pt(sh.start),et=pt(sh.end); if(st===null||et===null) return 0;
+  let m=et-st; if(m<0)m+=1440; m-=(sh.breakMin||0);
+  return Math.max(0,m/60)*wageFor(sh.date);
 }
-function calcHours(sh) {
-  const st = pt(sh.start), et = pt(sh.end); if (st === null || et === null) return 0;
-  let m = et - st; if (m < 0) m += 1440; m -= (sh.breakMin || 0); return Math.max(0, m/60);
+function calcHours(sh){
+  const st=pt(sh.start),et=pt(sh.end); if(st===null||et===null) return 0;
+  let m=et-st; if(m<0)m+=1440; m-=(sh.breakMin||0); return Math.max(0,m/60);
 }
-function monthlyData() {
-  const amt = Array(12).fill(0), hrs = Array(12).fill(0);
-  for (const s of S.shifts) {
-    const dt = pd(s.date); if (!dt || dt.getFullYear() !== S.year) continue;
-    const mo = dt.getMonth(); amt[mo] += calcShift(s); hrs[mo] += calcHours(s);
+function monthlyData(){
+  const amt=Array(12).fill(0), hrs=Array(12).fill(0);
+  for(const s of S.shifts){
+    const dt=pd(s.date); if(!dt||dt.getFullYear()!==S.year) continue;
+    const mo=dt.getMonth(); amt[mo]+=calcShift(s); hrs[mo]+=calcHours(s);
   }
-  return { amt, hrs };
+  return{amt,hrs};
 }
-function shiftsOn(key) { return S.shifts.filter(s => s.date === key); }
+function shiftsOn(key){ return S.shifts.filter(s=>s.date===key); }
 
-function renderDash() {
-  const { amt, hrs } = monthlyData();
-  const total = amt.reduce((a,b) => a+b, 0);
-  const remain = Math.max(0, S.limit - total);
-  const now = new Date(), curMo = now.getMonth();
-  const remMos = now.getFullYear() === S.year ? Math.max(1, 12 - curMo) : 12;
-  const avg = remain / remMos;
-  const pct = Math.min(100, total / S.limit * 100);
-  const cls = pct < 70 ? 'ok' : pct < 90 ? 'warn' : 'danger';
+/* ===================== DASHBOARD ===================== */
+function renderDash(){
+  const{amt,hrs}=monthlyData();
+  const total=amt.reduce((a,b)=>a+b,0);
+  const remain=Math.max(0,S.limit-total);
+  const now=new Date(), curMo=now.getMonth();
+  const remMos=now.getFullYear()===S.year?Math.max(1,12-curMo):12;
+  const avg=remain/remMos;
+  const pct=Math.min(100,total/S.limit*100);
+  const cls=pct<70?'ok':pct<90?'warn':'danger';
 
-  document.getElementById('m-total').textContent = fm(total);
-  document.getElementById('m-total').className = 'metric-value ' + cls;
-  document.getElementById('m-remain').textContent = fm(remain);
-  document.getElementById('m-avg').textContent = fm(avg);
-  document.getElementById('m-cur').textContent = fm(amt[curMo] || 0);
-  document.getElementById('pct-label').textContent = Math.round(pct) + '%';
-  const pf = document.getElementById('pfill');
-  pf.style.width = pct + '%'; pf.className = 'pfill ' + cls;
-  document.getElementById('limit-label').textContent = '上限 ' + fmShort(S.limit);
-  document.getElementById('yearBadge').textContent = S.year + '年';
+  document.getElementById('m-total').textContent=fm(total);
+  document.getElementById('m-total').className='metric-value '+cls;
+  document.getElementById('m-remain').textContent=fm(remain);
+  document.getElementById('m-avg').textContent=fm(avg);
+  document.getElementById('m-cur').textContent=fm(amt[curMo]||0);
+  document.getElementById('pct-label').textContent=Math.round(pct)+'%';
+  const pf=document.getElementById('pfill');
+  pf.style.width=pct+'%'; pf.className='pfill '+cls;
+  document.getElementById('limit-label').textContent='上限 '+fms(S.limit);
+  document.getElementById('yearBadge').textContent=S.year+'年';
 
-  const aa = document.getElementById('alertArea');
-  if (pct >= 90) aa.innerHTML = `<div class="alert danger">⚠️ 年収上限の${Math.round(pct)}%に達しています。残り${fm(remain)}です。</div>`;
-  else if (pct >= 70) aa.innerHTML = `<div class="alert warn">📊 上限の${Math.round(pct)}%に到達。残り${fm(remain)}（月平均${fm(avg)}）</div>`;
-  else if (total > 0) aa.innerHTML = `<div class="alert ok">✅ 順調です。残り${fm(remain)}、月平均${fm(avg)}まで働けます。</div>`;
-  else aa.innerHTML = '';
+  const aa=document.getElementById('alertArea');
+  if(pct>=90) aa.innerHTML=`<div class="alert danger">⚠️ 年収上限の${Math.round(pct)}%に達しています。残り${fm(remain)}です。</div>`;
+  else if(pct>=70) aa.innerHTML=`<div class="alert warn">📊 上限の${Math.round(pct)}%に到達。残り${fm(remain)}（月平均${fm(avg)}）</div>`;
+  else if(total>0) aa.innerHTML=`<div class="alert ok">✅ 順調です。残り${fm(remain)}、月平均${fm(avg)}まで働けます。</div>`;
+  else aa.innerHTML='';
 
-  const mn = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-  document.getElementById('monthRow').innerHTML = mn.map((n,i) => `
-    <div class="month-card ${i===curMo && now.getFullYear()===S.year ? 'cur' : ''}" onclick="jumpMonth(${i})">
+  const mn=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('monthRow').innerHTML=mn.map((n,i)=>`
+    <div class="month-card ${i===curMo&&now.getFullYear()===S.year?'cur':''}" onclick="jumpMonth(${i})">
       <div class="mname">${n}</div>
-      <div class="mamt">${fmShort(amt[i])}</div>
+      <div class="mamt">${fms(amt[i])}</div>
       <div class="mhrs">${hrs[i].toFixed(1)}h</div>
     </div>`).join('');
-
   renderChart(amt);
 }
 
-function renderChart(amt) {
-  const ctx = document.getElementById('incomeChart').getContext('2d');
-  if (chartInst) chartInst.destroy();
-  chartInst = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
-      datasets: [{
-        label: '収入', data: amt.map(a => Math.round(a)),
-        backgroundColor: '#5e8ef5', borderRadius: 5, borderWidth: 0
-      }]
+function renderChart(amt){
+  const ctx=document.getElementById('incomeChart').getContext('2d');
+  if(chartInst) chartInst.destroy();
+  chartInst=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+      datasets:[{label:'収入',data:amt.map(a=>Math.round(a)),backgroundColor:'#5e8ef5',borderRadius:5,borderWidth:0}]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '¥' + Math.round(c.parsed.y).toLocaleString('ja-JP') + '円' } } },
-      scales: {
-        x: { ticks: { color: '#8496c8', font: { size: 11 }, autoSkip: false, maxRotation: 0 }, grid: { display: false }, border: { display: false } },
-        y: { ticks: { color: '#8496c8', font: { size: 10 }, callback: v => '¥' + Math.round(v).toLocaleString('ja-JP') }, grid: { color: 'rgba(59,110,240,.06)' }, border: { display: false } }
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'¥'+Math.round(c.parsed.y).toLocaleString('ja-JP')+'円'}}},
+      scales:{
+        x:{ticks:{color:'#8496c8',font:{size:11},autoSkip:false,maxRotation:0},grid:{display:false},border:{display:false}},
+        y:{ticks:{color:'#8496c8',font:{size:10},callback:v=>'¥'+Math.round(v).toLocaleString('ja-JP')+'円'},grid:{color:'rgba(59,110,240,.06)'},border:{display:false}}
       }
     }
   });
 }
 
-function renderCal() {
-  const mn = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-  document.getElementById('calTitle').textContent = calYear + '年' + mn[calMonth];
-  const first = new Date(calYear, calMonth, 1).getDay();
-  const days = new Date(calYear, calMonth+1, 0).getDate();
-  const prevDays = new Date(calYear, calMonth, 0).getDate();
-  const today = new Date();
-  const cellCount = Math.ceil((first + days) / 7) * 7;
-  let html = '';
-  for (let i = 0; i < cellCount; i++) {
-    let d, mo, yr, other = false;
-    if (i < first) { d = prevDays - first + i + 1; mo = calMonth - 1; yr = calYear; if (mo < 0) { mo = 11; yr--; } other = true; }
-    else if (i >= first + days) { d = i - first - days + 1; mo = calMonth + 1; yr = calYear; if (mo > 11) { mo = 0; yr++; } other = true; }
-    else { d = i - first + 1; mo = calMonth; yr = calYear; }
-    const dow = i % 7;
-    const key = dateKey(yr, mo, d);
-    const ss = other ? [] : shiftsOn(key);
-    const isToday = yr === today.getFullYear() && mo === today.getMonth() && d === today.getDate();
-    let cls = 'cal-cell';
-    if (dow === 0) cls += ' sun'; if (dow === 6) cls += ' sat';
-    if (other) cls += ' other'; if (isToday) cls += ' today'; if (ss.length) cls += ' has-shift';
-    let inner = `<span class="day-num">${d}</span>`;
-    for (const s of ss) inner += `<span class="shift-badge">${s.start}-${s.end}</span>`;
-    if (ss.length) inner += `<span class="shift-amt">${fmShort(ss.reduce((a,s2) => a + calcShift(s2), 0))}</span>`;
-    const ca = other ? '' : `onclick="openModal('${key}')"`;
-    html += `<div class="${cls}" ${ca}>${inner}</div>`;
+/* ===================== CALENDAR ===================== */
+function renderCal(){
+  const mn=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('calTitle').textContent=calYear+'年'+mn[calMonth];
+  const first=new Date(calYear,calMonth,1).getDay();
+  const days=new Date(calYear,calMonth+1,0).getDate();
+  const prevDays=new Date(calYear,calMonth,0).getDate();
+  const today=new Date();
+  const cellCount=Math.ceil((first+days)/7)*7;
+  let html='';
+  for(let i=0;i<cellCount;i++){
+    let d,mo,yr,other=false;
+    if(i<first){d=prevDays-first+i+1;mo=calMonth-1;yr=calYear;if(mo<0){mo=11;yr--;}other=true;}
+    else if(i>=first+days){d=i-first-days+1;mo=calMonth+1;yr=calYear;if(mo>11){mo=0;yr++;}other=true;}
+    else{d=i-first+1;mo=calMonth;yr=calYear;}
+    const dow=i%7;
+    const key=dateKey(yr,mo,d);
+    const ss=other?[]:shiftsOn(key);
+    const isToday=yr===today.getFullYear()&&mo===today.getMonth()&&d===today.getDate();
+    let cls='cal-cell';
+    if(dow===0)cls+=' sun'; if(dow===6)cls+=' sat';
+    if(other)cls+=' other'; if(isToday)cls+=' today'; if(ss.length)cls+=' has-shift';
+    let inner=`<span class="day-num">${d}</span>`;
+    for(const s of ss) inner+=`<span class="shift-badge">${s.start}-${s.end}</span>`;
+    if(ss.length) inner+=`<span class="shift-amt">${fms(ss.reduce((a,s2)=>a+calcShift(s2),0))}</span>`;
+    const ca=other?'':`onclick="openModal('${key}')"`;
+    html+=`<div class="${cls}" ${ca}>${inner}</div>`;
   }
-  document.getElementById('calBody').innerHTML = html;
-  const mShifts = S.shifts.filter(s => { const dt = pd(s.date); return dt && dt.getFullYear() === calYear && dt.getMonth() === calMonth; });
-  const mTotal = mShifts.reduce((a,s) => a + calcShift(s), 0);
-  const mHrs = mShifts.reduce((a,s) => a + calcHours(s), 0);
-  document.getElementById('calSummary').textContent = mn[calMonth] + '合計：' + fm(mTotal) + '（' + mHrs.toFixed(1) + '時間 / ' + mShifts.length + '日）';
+  document.getElementById('calBody').innerHTML=html;
+  const mShifts=S.shifts.filter(s=>{const dt=pd(s.date);return dt&&dt.getFullYear()===calYear&&dt.getMonth()===calMonth;});
+  const mTotal=mShifts.reduce((a,s)=>a+calcShift(s),0);
+  const mHrs=mShifts.reduce((a,s)=>a+calcHours(s),0);
+  document.getElementById('calSummary').textContent=mn[calMonth]+'合計：'+fm(mTotal)+'（'+mHrs.toFixed(1)+'時間 / '+mShifts.length+'日）';
 }
+function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
+function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
+function jumpMonth(m){ calYear=S.year; calMonth=m; showTab('cal'); }
 
-function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCal(); }
-function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCal(); }
-function jumpMonth(m) { calYear = S.year; calMonth = m; showTab('cal'); }
-
-/* ---- Drum Roll Picker ---- */
-const HOURS = Array.from({length:24}, (_,i) => String(i).padStart(2,'0'));
+/* ===================== iOS PICKER ===================== */
+const ITEM_H = 44;
+const VISIBLE = 5;
+const HOURS = Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
 const MINS  = ['00','15','30','45'];
 
-let drums = {};
+const pickerState = {};
 
-function makeDrum(id, items, initVal) {
-  const wrap = document.getElementById(id);
-  if (!wrap) return;
-  wrap.innerHTML = '';
+function buildPicker(listId, colId, items, initVal){
+  const listEl = document.getElementById(listId);
+  const colEl  = document.getElementById(colId);
+  if(!listEl || !colEl) return;
 
-  const drumEl = document.createElement('div');
-  drumEl.className = 'drum';
+  listEl.innerHTML = '';
 
-  const highlight = document.createElement('div');
-  highlight.className = 'drum-highlight';
-  drumEl.appendChild(highlight);
-
-  const inner = document.createElement('div');
-  inner.className = 'drum-inner';
-
-  const padded = [...items, ...items, ...items];
-  padded.forEach(v => {
-    const item = document.createElement('div');
-    item.className = 'drum-item';
-    item.textContent = v;
-    inner.appendChild(item);
+  // pad items × 3 for infinite-feel scroll
+  const allItems = [...items, ...items, ...items];
+  allItems.forEach(v => {
+    const div = document.createElement('div');
+    div.className = 'drum-list-item';
+    div.textContent = v;
+    listEl.appendChild(div);
   });
-  drumEl.appendChild(inner);
-
-  const overlay = document.createElement('div');
-  overlay.className = 'drum-overlay';
-  drumEl.appendChild(overlay);
-
-  wrap.appendChild(drumEl);
 
   const n = items.length;
-  let idx = items.indexOf(initVal);
-  if (idx < 0) idx = 0;
-  let curIdx = idx;
+  let initIdx = items.indexOf(initVal);
+  if(initIdx < 0) initIdx = 0;
 
-  function snapTo(i) {
-    i = ((i % n) + n) % n;
-    curIdx = i;
-    inner.style.transform = `translateY(${(40 - (n + i) * 40)}px)`;
-    inner.querySelectorAll('.drum-item').forEach((el, k) => {
-      el.classList.toggle('selected', k % n === i);
+  // offset so that index 0 of middle-copy aligns with center
+  // center row = row index 2 (0-based)
+  // translateY for idx i (in middle copy): -(n + i)*ITEM_H + 2*ITEM_H
+  function getY(idx){
+    return -((n + idx) * ITEM_H) + 2 * ITEM_H;
+  }
+
+  let curIdx = initIdx;
+  let currentY = getY(curIdx);
+  listEl.style.transform = `translateY(${currentY}px)`;
+  listEl.style.transition = 'none';
+
+  function snapToIdx(idx, animate){
+    idx = ((idx % n) + n) % n;
+    curIdx = idx;
+    currentY = getY(idx);
+    listEl.style.transition = animate ? 'transform 0.25s cubic-bezier(.4,0,.2,1)' : 'none';
+    listEl.style.transform = `translateY(${currentY}px)`;
+    updateSelectedStyle();
+  }
+
+  function updateSelectedStyle(){
+    const allDivs = listEl.querySelectorAll('.drum-list-item');
+    allDivs.forEach((el, k) => {
+      const isSelected = (k % n) === curIdx;
+      el.style.color = isSelected ? '#1c2a5e' : '#8496c8';
+      el.style.fontSize = isSelected ? '22px' : '15px';
+      el.style.fontWeight = isSelected ? '700' : '400';
     });
   }
-  snapTo(curIdx);
+  updateSelectedStyle();
 
-  let startY = 0, startIdx = 0, isDragging = false;
+  // drag handling
+  let dragStartY = 0;
+  let dragStartIdx = 0;
+  let isDragging = false;
+  let velocity = 0;
+  let lastY = 0;
+  let lastT = 0;
 
-  drumEl.addEventListener('mousedown', e => {
-    isDragging = true; startY = e.clientY; startIdx = curIdx;
-    drumEl.classList.add('grabbing');
+  function onStart(clientY){
+    isDragging = true;
+    dragStartY = clientY;
+    dragStartIdx = curIdx;
+    lastY = clientY;
+    lastT = Date.now();
+    velocity = 0;
+    listEl.style.transition = 'none';
+  }
+  function onMove(clientY){
+    if(!isDragging) return;
+    const dy = dragStartY - clientY;
+    const now = Date.now();
+    velocity = (clientY - lastY) / (now - lastT + 1);
+    lastY = clientY; lastT = now;
+    const rawIdx = dragStartIdx + dy / ITEM_H;
+    const idx = ((Math.round(rawIdx) % n) + n) % n;
+    const liveY = getY(dragStartIdx) - dy;
+    listEl.style.transform = `translateY(${liveY}px)`;
+    // update style live
+    const allDivs = listEl.querySelectorAll('.drum-list-item');
+    allDivs.forEach((el,k)=>{
+      const isSelected = (k % n) === idx;
+      el.style.color = isSelected ? '#1c2a5e' : '#8496c8';
+      el.style.fontSize = isSelected ? '22px' : '15px';
+      el.style.fontWeight = isSelected ? '700' : '400';
+    });
+    curIdx = idx;
+  }
+  function onEnd(){
+    if(!isDragging) return;
+    isDragging = false;
+    // flick
+    const flickSteps = Math.round(-velocity * 4);
+    const targetIdx = ((curIdx - flickSteps) % n + n) % n;
+    snapToIdx(targetIdx, true);
+  }
+
+  colEl.addEventListener('mousedown', e=>{ onStart(e.clientY); e.preventDefault(); });
+  document.addEventListener('mousemove', e=>{ if(isDragging) onMove(e.clientY); });
+  document.addEventListener('mouseup', ()=>{ if(isDragging) onEnd(); });
+
+  colEl.addEventListener('touchstart', e=>{ onStart(e.touches[0].clientY); }, {passive:true});
+  colEl.addEventListener('touchmove',  e=>{ onMove(e.touches[0].clientY); e.preventDefault(); }, {passive:false});
+  colEl.addEventListener('touchend',   ()=>{ onEnd(); });
+
+  colEl.addEventListener('wheel', e=>{
     e.preventDefault();
-  });
-  document.addEventListener('mousemove', e => {
-    if (!isDragging) return;
-    const dy = startY - e.clientY;
-    const delta = Math.round(dy / 40);
-    snapTo(startIdx + delta);
-  });
-  document.addEventListener('mouseup', () => { isDragging = false; drumEl.classList.remove('grabbing'); });
+    snapToIdx(curIdx + (e.deltaY>0?1:-1), true);
+  }, {passive:false});
 
-  drumEl.addEventListener('touchstart', e => {
-    startY = e.touches[0].clientY; startIdx = curIdx;
-    e.preventDefault();
-  }, { passive: false });
-  drumEl.addEventListener('touchmove', e => {
-    const dy = startY - e.touches[0].clientY;
-    const delta = Math.round(dy / 40);
-    snapTo(startIdx + delta);
-    e.preventDefault();
-  }, { passive: false });
-
-  drumEl.addEventListener('wheel', e => {
-    e.preventDefault();
-    snapTo(curIdx + (e.deltaY > 0 ? 1 : -1));
-  }, { passive: false });
-
-  drums[id] = { getValue: () => items[curIdx], reset: (v) => { const i = items.indexOf(v); snapTo(i >= 0 ? i : 0); } };
+  pickerState[listId] = { getValue: () => items[curIdx] };
 }
 
-function buildDrums(startH='09', startM='00', endH='17', endM='00') {
-  const sw = document.getElementById('drum-start-wrap');
-  const ew = document.getElementById('drum-end-wrap');
-  sw.innerHTML = '';
-  ew.innerHTML = '';
-
-  const sh = document.createElement('div'); sh.id = 'drum-sh';
-  const sm = document.createElement('div'); sm.id = 'drum-sm';
-  const eh = document.createElement('div'); eh.id = 'drum-eh';
-  const em = document.createElement('div'); em.id = 'drum-em';
-
-  const sep1 = document.createElement('span'); sep1.className = 'drum-sep'; sep1.textContent = ':';
-  const sep2 = document.createElement('span'); sep2.className = 'drum-sep'; sep2.textContent = ':';
-
-  sw.appendChild(sh); sw.appendChild(sep1); sw.appendChild(sm);
-  ew.appendChild(eh); ew.appendChild(sep2); ew.appendChild(em);
-
-  makeDrum('drum-sh', HOURS, startH);
-  makeDrum('drum-sm', MINS,  startM);
-  makeDrum('drum-eh', HOURS, endH);
-  makeDrum('drum-em', MINS,  endM);
+function initPickers(){
+  buildPicker('pl-sh','p-sh', HOURS, '09');
+  buildPicker('pl-sm','p-sm', MINS,  '00');
+  buildPicker('pl-eh','p-eh', HOURS, '17');
+  buildPicker('pl-em','p-em', MINS,  '00');
 }
 
-function getDrumTime(prefix) {
-  const h = drums[`drum-${prefix}h`]?.getValue() || '09';
-  const m = drums[`drum-${prefix}m`]?.getValue() || '00';
+function getPickerTime(hId, mId){
+  const h = pickerState[hId]?.getValue() ?? '09';
+  const m = pickerState[mId]?.getValue() ?? '00';
   return `${h}:${m}`;
 }
 
-/* ---- Modal ---- */
-function openModal(key) {
+/* ===================== MODAL ===================== */
+function openModal(key){
   activeDate = key;
   const dt = pd(key);
   const dow = ['日','月','火','水','木','金','土'];
   document.getElementById('modalTitle').textContent = `${dt.getMonth()+1}月${dt.getDate()}日（${dow[dt.getDay()]}）`;
   const ss = shiftsOn(key);
   const ex = document.getElementById('modalExisting');
-  if (ss.length) {
+  if(ss.length){
     ex.innerHTML = '<div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:8px;font-family:Nunito,sans-serif">登録済みシフト</div>' +
-      ss.map(s => `<div class="shift-list-item"><span class="shift-list-time">${s.start}〜${s.end}</span><span class="shift-list-amt">${fm(calcShift(s))}</span><button class="btn btn-danger btn-xs" onclick="removeShift('${s.id}')">削除</button></div>`).join('');
-  } else { ex.innerHTML = ''; }
+      ss.map(s=>`<div class="shift-list-item"><span class="shift-list-time">${s.start}〜${s.end}</span><span class="shift-list-amt">${fm(calcShift(s))}</span><button class="btn btn-danger btn-xs" onclick="removeShift('${s.id}')">削除</button></div>`).join('');
+  } else { ex.innerHTML=''; }
 
-  buildDrums('09','00','17','00');
-  document.getElementById('m-break').value = '60';
-  document.getElementById('m-memo').value = '';
-  document.getElementById('overlay').className = 'overlay open';
+  document.getElementById('m-break').value='60';
+  document.getElementById('m-memo').value='';
+  document.getElementById('overlay').className='overlay open';
+  initPickers();
 }
-function closeModal() { document.getElementById('overlay').className = 'overlay'; activeDate = null; }
-function overlayClick(e) { if (e.target === document.getElementById('overlay')) closeModal(); }
+function closeModal(){ document.getElementById('overlay').className='overlay'; activeDate=null; }
+function overlayClick(e){ if(e.target===document.getElementById('overlay')) closeModal(); }
 
-function saveShift() {
-  if (!activeDate) return;
-  const start = getDrumTime('s');
-  const end   = getDrumTime('e');
-  const breakMin = +document.getElementById('m-break').value || 0;
+function saveShift(){
+  if(!activeDate) return;
+  const start = getPickerTime('pl-sh','pl-sm');
+  const end   = getPickerTime('pl-eh','pl-em');
+  const breakMin = +document.getElementById('m-break').value||0;
   const memo  = document.getElementById('m-memo').value.trim();
-  S.shifts.push({ id: uid(), date: activeDate, start, end, breakMin, memo });
+  S.shifts.push({id:uid(),date:activeDate,start,end,breakMin,memo});
   save(); closeModal(); renderCal(); renderDash();
 }
-function removeShift(id) {
-  S.shifts = S.shifts.filter(s => s.id !== id);
+function removeShift(id){
+  S.shifts = S.shifts.filter(s=>s.id!==id);
   save();
-  if (activeDate) openModal(activeDate);
+  if(activeDate) openModal(activeDate);
   renderCal(); renderDash();
 }
 
-function renderWageList() {
-  const el = document.getElementById('wageList');
-  if (!S.wages.length) { el.innerHTML = '<div class="empty-state">時給が設定されていません</div>'; return; }
-  el.innerHTML = S.wages.sort((a,b) => (pd(a.start)||0)-(pd(b.start)||0)).map((w,i) => `
+/* ===================== WAGE ===================== */
+function renderWageList(){
+  const el=document.getElementById('wageList');
+  if(!S.wages.length){el.innerHTML='<div class="empty-state">時給が設定されていません</div>';return;}
+  el.innerHTML=S.wages.sort((a,b)=>(pd(a.start)||0)-(pd(b.start)||0)).map((w,i)=>`
     <div class="wage-item">
-      <div class="wage-period">${w.start} 〜 ${w.end || '無期限'}</div>
+      <div class="wage-period">${w.start} 〜 ${w.end||'無期限'}</div>
       <div class="wage-rate">¥${w.rate.toLocaleString()}/h</div>
       <button class="btn btn-danger btn-xs" onclick="removeWage(${i})">削除</button>
     </div>`).join('');
 }
-function addWage() {
-  const start = document.getElementById('w-start').value.trim();
-  const end   = document.getElementById('w-end').value.trim();
-  const rate  = +document.getElementById('w-rate').value;
-  if (!pd(start) || !rate) { alert('開始日と時給を入力してください'); return; }
-  S.wages.push({ start, end, rate });
+function addWage(){
+  const start=document.getElementById('w-start').value.trim();
+  const end=document.getElementById('w-end').value.trim();
+  const rate=+document.getElementById('w-rate').value;
+  if(!pd(start)||!rate){alert('開始日と時給を入力してください');return;}
+  S.wages.push({start,end,rate});
   save(); renderWageList(); renderDash();
-  document.getElementById('w-start').value = '';
-  document.getElementById('w-end').value = '';
-  document.getElementById('w-rate').value = '';
+  document.getElementById('w-start').value='';
+  document.getElementById('w-end').value='';
+  document.getElementById('w-rate').value='';
 }
-function removeWage(i) { S.wages.splice(i, 1); save(); renderWageList(); renderDash(); }
+function removeWage(i){ S.wages.splice(i,1); save(); renderWageList(); renderDash(); }
 
-function setLimit(v) {
-  S.limit = v;
-  document.getElementById('limitDisp').textContent = fmShort(v);
+/* ===================== SETTINGS ===================== */
+function setLimit(v){
+  S.limit=v;
+  document.getElementById('limitDisp').textContent=fms(v);
   save(); renderDash();
 }
-function setCustomLimit() {
-  const v = +document.getElementById('customLimit').value;
-  if (v > 0) { setLimit(v); document.getElementById('customLimit').value = ''; }
+function setCustomLimit(){
+  const v=+document.getElementById('customLimit').value;
+  if(v>0){setLimit(v);document.getElementById('customLimit').value='';}
 }
-function setYear() {
-  const v = +document.getElementById('cfgYear').value;
-  if (v >= 2020 && v <= 2040) { S.year = v; calYear = v; calMonth = 0; save(); renderDash(); renderCal(); document.getElementById('yearBadge').textContent = v + '年'; }
+function setYear(){
+  const v=+document.getElementById('cfgYear').value;
+  if(v>=2020&&v<=2040){S.year=v;calYear=v;calMonth=0;save();renderDash();renderCal();document.getElementById('yearBadge').textContent=v+'年';}
 }
-function clearAll() {
-  if (confirm('全データを削除しますか？この操作は取り消せません。')) {
-    S.shifts = []; S.wages = [{ start:'2026/1/1', end:'', rate:1120 }]; S.limit = 1230000; S.year = 2026;
-    calYear = 2026; calMonth = 0; save(); renderDash(); renderCal(); renderWageList();
+function clearAll(){
+  if(confirm('全データを削除しますか？この操作は取り消せません。')){
+    S.shifts=[];S.wages=[{start:'2026/1/1',end:'',rate:1120}];S.limit=1230000;S.year=2026;
+    calYear=2026;calMonth=0;save();renderDash();renderCal();renderWageList();
   }
 }
 
-function showTab(t) {
-  ['dash','cal','wage','cfg'].forEach(id => { document.getElementById('tab-'+id).style.display = id === t ? '' : 'none'; });
-  document.querySelectorAll('.tab').forEach((el,i) => { el.classList.toggle('active', ['dash','cal','wage','cfg'][i] === t); });
-  if (t === 'dash') renderDash();
-  if (t === 'cal') renderCal();
-  if (t === 'wage') renderWageList();
+/* ===================== TABS ===================== */
+function showTab(t){
+  ['dash','cal','wage','cfg'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'':'none';});
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.toggle('active',['dash','cal','wage','cfg'][i]===t);});
+  if(t==='dash') renderDash();
+  if(t==='cal')  renderCal();
+  if(t==='wage') renderWageList();
 }
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('overlay').classList.contains('open')) closeModal();
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'&&document.getElementById('overlay').classList.contains('open')) closeModal();
 });
 
 load();
-calYear = S.year;
-calMonth = new Date().getMonth();
+calYear=S.year;
+calMonth=new Date().getMonth();
 renderDash();
 </script>
 </body>
