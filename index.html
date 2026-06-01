@@ -369,6 +369,8 @@ window.openModal=function(key){
             <select class="sli-sel" onchange="updateShift('${s.id}','breakMin',+this.value)">${breakOpts(s.breakMin||0)}</select>
           </div>
           <div class="sli-amt" style="font-size:11px;color:var(--ok);font-family:'Quantico',sans-serif;font-weight:700">${fm(calcShift(s))}</div>
+          <button id="save-btn-${s.id}" onclick="saveShiftEdit('${s.id}')"
+            style="display:none;margin-top:4px;padding:5px 10px;font-size:11px;font-weight:700;background:#00aaff18;color:#ffffff;border:1px solid #00aaff50;border-radius:6px;cursor:pointer;font-family:'Quantico',sans-serif;box-shadow:0 0 8px #00aaff30;width:100%">保存する</button>
         </div>
         <button class="btn btn-danger btn-xs" onclick="removeShift('${s.id}')">削除</button>
       </div>`;
@@ -402,10 +404,10 @@ window.updateShift=function(id,field,val){
   const s=S.shifts.find(s=>s.id===id);
   if(!s) return;
   s[field]=val;
-  saveToFirebase();
+  // 金額プレビューだけ更新（保存はボタンで）
   const amtEl=document.querySelector('#sli-'+id+' .sli-amt');
   if(amtEl) amtEl.textContent=fm(calcShift(s));
-  renderCal(); renderDash();
+  markDirty(id);
 };
 window.updateShiftTime=function(id,part,el){
   const s=S.shifts.find(s=>s.id===id);
@@ -419,10 +421,31 @@ window.updateShiftTime=function(id,part,el){
     if(part==='end') cur[0]=el.value; else cur[1]=el.value;
     s.end=cur.join(':');
   }
-  saveToFirebase();
   const amtEl=document.querySelector('#sli-'+id+' .sli-amt');
   if(amtEl) amtEl.textContent=fm(calcShift(s));
+  markDirty(id);
+};
+function markDirty(id){
+  const btn=document.querySelector(`#save-btn-${id}`);
+  if(btn){ btn.style.display='block'; }
+}
+window.saveShiftEdit=function(id){
+  saveToFirebase();
   renderCal(); renderDash();
+  const btn=document.querySelector(`#save-btn-${id}`);
+  if(btn){
+    btn.textContent='✓ 変更しました！';
+    btn.style.background='#00ddaa20';
+    btn.style.borderColor='#00ddaa';
+    btn.style.color='#00ddaa';
+    setTimeout(()=>{
+      btn.style.display='none';
+      btn.textContent='保存する';
+      btn.style.background='';
+      btn.style.borderColor='';
+      btn.style.color='';
+    }, 2000);
+  }
 };
 
 /* ===== WAGE ===== */
