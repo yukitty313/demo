@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>扶養内収入管理</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -425,15 +426,15 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.getElementById('overlay').classList.contains('open')) closeModal();
 });
 
-/* ===== SHIFT SCAN ===== */
+/* ===== SHIFT EXCEL IMPORT ===== */
 let scanRows = [];
 
 window.openScanModal = function(){
   document.getElementById('scanOverlay').className = 'overlay open';
   document.getElementById('scanStatus').textContent = '';
+  document.getElementById('scanStatus').style.color = 'var(--text2)';
   document.getElementById('scanResult').style.display = 'none';
   document.getElementById('scanBtnRow').style.display = 'none';
-  document.getElementById('scanPreview').style.display = 'none';
   document.getElementById('scanFileInput').value = '';
   scanRows = [];
 };
@@ -444,64 +445,63 @@ window.scanOverlayClick = function(e){
   if(e.target === document.getElementById('scanOverlay')) closeScanModal();
 };
 
-window.onScanFileSelected = async function(e){
+window.onExcelSelected = function(e){
   const file = e.target.files[0];
   if(!file) return;
-  const preview = document.getElementById('scanPreview');
-  preview.src = URL.createObjectURL(file);
-  preview.style.display = 'block';
-  document.getElementById('scanStatus').textContent = '🔍 AIがシフト表を解析中...';
+  document.getElementById('scanStatus').textContent = '📊 Excelを読み取り中...';
   document.getElementById('scanStatus').style.color = 'var(--accent)';
   document.getElementById('scanResult').style.display = 'none';
   document.getElementById('scanBtnRow').style.display = 'none';
 
-  try {
-    const b64 = await fileToBase64(file);
-    const mediaType = file.type || 'image/jpeg';
-    const year = S.year || 2026;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try {
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, { type: 'array', cellText: true, cellDates: false });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
-            { type: 'text', text: `このシフト表から、時間が確定しているシフト（開始時刻・終了時刻が明記されているもの）だけを抽出してください。「非公開」「未定」などは除外してください。年は${year}年です。
-必ずJSONのみで返してください。例：[{"date":"${year}/06/02","start":"17:30","end":"21:00"},{"date":"${year}/06/03","start":"18:00","end":"21:30"}]` }
-          ]
-        }]
-      })
-    });
+      scanRows = [];
+      const year = S.year || 2026;
 
-    const data = await resp.json();
-    const text = data.content?.[0]?.text || '';
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if(!jsonMatch) throw new Error('JSON not found');
-    scanRows = JSON.parse(jsonMatch[0]);
-    renderScanTable();
-    document.getElementById('scanStatus').textContent = `✅ ${scanRows.length}件のシフトを読み取りました。内容を確認してください。`;
-    document.getElementById('scanStatus').style.color = 'var(--ok)';
-    document.getElementById('scanResult').style.display = 'block';
-    document.getElementById('scanBtnRow').style.display = 'flex';
-  } catch(err) {
-    console.error('Scan error:', err);
-    document.getElementById('scanStatus').textContent = '❌ エラー: ' + err.message;
-    document.getElementById('scanStatus').style.color = 'var(--danger)';
-  }
+      for(const row of rows){
+        const dateCell = String(row[0] || '').trim();   // A列: 6/02 形式
+        const kindCell = String(row[2] || '').trim();   // C列: ●出勤
+        const startCell = String(row[3] || '').trim();  // D列: 17:30
+        const endCell   = String(row[4] || '').trim();  // E列: 21:00
+
+        // ●出勤 かつ 時刻が入っている行だけ
+        if(!kindCell.includes('出勤') && !kindCell.includes('●')) continue;
+        if(!startCell.match(/^\d{1,2}:\d{2}$/) || !endCell.match(/^\d{1,2}:\d{2}$/)) continue;
+
+        // 日付パース: 6/02 → 2026/06/02
+        const dmatch = dateCell.match(/(\d{1,2})\/(\d{1,2})/);
+        if(!dmatch) continue;
+        const mo = String(+dmatch[1]).padStart(2,'0');
+        const dy = String(+dmatch[2]).padStart(2,'0');
+        const dateStr = `${year}/${mo}/${dy}`;
+
+        scanRows.push({ date: dateStr, start: startCell, end: endCell, breakMin: 60 });
+      }
+
+      if(scanRows.length === 0){
+        document.getElementById('scanStatus').textContent = '⚠️ シフトが見つかりませんでした。ファイルを確認してください。';
+        document.getElementById('scanStatus').style.color = 'var(--warn)';
+        return;
+      }
+
+      renderScanTable();
+      document.getElementById('scanStatus').textContent = `✅ ${scanRows.length}件のシフトを読み取りました。内容を確認してください。`;
+      document.getElementById('scanStatus').style.color = 'var(--ok)';
+      document.getElementById('scanResult').style.display = 'block';
+      document.getElementById('scanBtnRow').style.display = 'flex';
+    } catch(err) {
+      document.getElementById('scanStatus').textContent = '❌ 読み取りに失敗しました: ' + err.message;
+      document.getElementById('scanStatus').style.color = 'var(--danger)';
+    }
+  };
+  reader.readAsArrayBuffer(file);
 };
-
-function fileToBase64(file){
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(',')[1]);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-}
 
 function renderScanTable(){
   const tbody = document.getElementById('scanTableBody');
@@ -775,7 +775,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
         <button class="cal-nav-btn" onclick="calNext()">&#8250;</button>
       </div>
       <div style="margin-bottom:10px">
-        <button class="btn btn-primary" style="width:100%;font-size:13px" onclick="openScanModal()">📷 シフト表を画像で読み込む</button>
+        <button class="btn btn-primary" style="width:100%;font-size:13px" onclick="openScanModal()">📊 Excelからシフトを読み込む</button>
       </div>
       <div class="card" style="padding:12px">
         <div class="cal-grid">
@@ -831,20 +831,19 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
   </div>
 </div>
 
-<!-- シフトスキャンモーダル -->
+<!-- シフトExcel読み込みモーダル -->
 <div class="overlay" id="scanOverlay" onclick="scanOverlayClick(event)">
   <div class="scan-modal">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-size:15px;font-weight:800;color:var(--text);font-family:'Nunito',sans-serif">シフト表を読み込む</div>
+      <div style="font-size:15px;font-weight:800;color:var(--text);font-family:'Nunito',sans-serif">Excelからシフトを読み込む</div>
       <button onclick="closeScanModal()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;line-height:1">×</button>
     </div>
     <div class="upload-area" onclick="document.getElementById('scanFileInput').click()">
-      <input type="file" id="scanFileInput" accept="image/*" onchange="onScanFileSelected(event)">
-      <div class="upload-icon">🖼️</div>
-      <div class="upload-text">タップして画像を選択</div>
-      <div class="upload-sub">シフト表のスクリーンショットをアップロード</div>
+      <input type="file" id="scanFileInput" accept=".xlsx,.xls" onchange="onExcelSelected(event)">
+      <div class="upload-icon" style="font-size:32px;margin-bottom:8px">📊</div>
+      <div class="upload-text">タップしてExcelを選択</div>
+      <div class="upload-sub">シフト表の .xlsx ファイルをアップロード</div>
     </div>
-    <img id="scanPreview" class="preview-img" style="display:none">
     <div class="scan-status" id="scanStatus"></div>
     <div class="scan-result" id="scanResult" style="display:none">
       <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:8px;font-family:'Nunito',sans-serif">読み取り結果（修正できます）</div>
