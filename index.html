@@ -234,6 +234,9 @@ window.jumpMonth=function(m){ calYear=S.year; calMonth=m; showTab('cal'); };
 /* ===== iOS PICKER ===== */
 const ITEM_H=44;
 const HOURS=Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
+function hoursOpts(sel){ return HOURS.map(h=>`<option value="${h}" ${h===sel?'selected':''}>${h}</option>`).join(''); }
+function minsOpts(sel){ const M=['00','05','10','15','20','25','30','35','40','45','50','55']; return M.map(m=>`<option value="${m}" ${m===sel?'selected':''}>${m}</option>`).join(''); }
+function breakOpts(sel){ const B=['0','15','30','45','60','90']; return B.map(b=>`<option value="${b}" ${String(sel)===b?'selected':''}>${b}分</option>`).join(''); }
 const MINS=['00','05','10','15','20','25','30','35','40','45','50','55'];
 const pickerState={};
 
@@ -346,20 +349,30 @@ window.openModal=function(key){
   const ex=document.getElementById('modalExisting');
   if(ss.length){
     ex.innerHTML='<div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:8px">登録済みシフト</div>'+
-      ss.map(s=>`<div class="shift-list-item" id="sli-${s.id}">
-        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
-          <div style="display:flex;align-items:center;gap:6px">
-            <input class="sli-input" value="${s.start}" onchange="updateShift('${s.id}','start',this.value)" style="width:52px">
-            <span style="color:var(--text3);font-size:12px">〜</span>
-            <input class="sli-input" value="${s.end}" onchange="updateShift('${s.id}','end',this.value)" style="width:52px">
-            <span style="font-size:11px;color:var(--text3)">休憩</span>
-            <input class="sli-input" type="number" value="${s.breakMin||0}" onchange="updateShift('${s.id}','breakMin',+this.value)" style="width:40px" min="0">
-            <span style="font-size:11px;color:var(--text3)">分</span>
+      ss.map(s=>{
+        const sh=s.start.split(':'), eh=s.end.split(':');
+        const sH=sh[0]||'09', sM=sh[1]||'00', eH=eh[0]||'17', eM=eh[1]||'00';
+        return `<div class="shift-list-item" id="sli-${s.id}">
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--text3)">開始</span>
+            <select class="sli-sel" onchange="updateShiftTime('${s.id}','start',this)" data-id="${s.id}" data-part="sh">${hoursOpts(sH)}</select>
+            <span style="color:var(--text2);font-weight:700">:</span>
+            <select class="sli-sel" onchange="updateShiftTime('${s.id}','startm',this)" data-id="${s.id}" data-part="sm">${minsOpts(sM)}</select>
+            <span style="font-size:11px;color:var(--text3);margin-left:4px">終了</span>
+            <select class="sli-sel" onchange="updateShiftTime('${s.id}','end',this)" data-id="${s.id}" data-part="eh">${hoursOpts(eH)}</select>
+            <span style="color:var(--text2);font-weight:700">:</span>
+            <select class="sli-sel" onchange="updateShiftTime('${s.id}','endm',this)" data-id="${s.id}" data-part="em">${minsOpts(eM)}</select>
           </div>
-          <div class="sli-amt" style="font-size:11px;color:var(--ok);font-family:'Rajdhani',sans-serif;font-weight:700">${fm(calcShift(s))}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11px;color:var(--text3)">休憩</span>
+            <select class="sli-sel" onchange="updateShift('${s.id}','breakMin',+this.value)">${breakOpts(s.breakMin||0)}</select>
+          </div>
+          <div class="sli-amt" style="font-size:11px;color:var(--ok);font-family:'Quantico',sans-serif;font-weight:700">${fm(calcShift(s))}</div>
         </div>
         <button class="btn btn-danger btn-xs" onclick="removeShift('${s.id}')">削除</button>
-      </div>`).join('');
+      </div>`;
+      }).join('');
   } else ex.innerHTML='';
   document.getElementById('m-break').value='0';
   document.getElementById('m-memo').value='';
@@ -372,7 +385,7 @@ window.saveShift=function(){
   if(!activeDate) return;
   const start=getPickerTime('pl-sh','pl-sm');
   const end=getPickerTime('pl-eh','pl-em');
-  const breakMin=+document.getElementById('m-break').value||0;
+  const breakMin=+document.getElementById('m-break').value;
   const memo=document.getElementById('m-memo').value.trim();
   if(!S.shifts) S.shifts=[];
   S.shifts.push({id:uid(),date:activeDate,start,end,breakMin,memo});
@@ -389,6 +402,23 @@ window.updateShift=function(id,field,val){
   const s=S.shifts.find(s=>s.id===id);
   if(!s) return;
   s[field]=val;
+  saveToFirebase();
+  const amtEl=document.querySelector('#sli-'+id+' .sli-amt');
+  if(amtEl) amtEl.textContent=fm(calcShift(s));
+  renderCal(); renderDash();
+};
+window.updateShiftTime=function(id,part,el){
+  const s=S.shifts.find(s=>s.id===id);
+  if(!s) return;
+  if(part==='start'||part==='startm'){
+    const cur=s.start.split(':');
+    if(part==='start') cur[0]=el.value; else cur[1]=el.value;
+    s.start=cur.join(':');
+  } else {
+    const cur=s.end.split(':');
+    if(part==='end') cur[0]=el.value; else cur[1]=el.value;
+    s.end=cur.join(':');
+  }
   saveToFirebase();
   const amtEl=document.querySelector('#sli-'+id+' .sli-amt');
   if(amtEl) amtEl.textContent=fm(calcShift(s));
@@ -740,7 +770,8 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
 .flex-end{display:flex;justify-content:flex-end;gap:8px}
 .flex-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .shift-list-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#0a1e35;border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px;border:1px solid #00aaff35;box-shadow:0 0 8px #00aaff15}
-.sli-input{padding:4px 6px;font-size:12px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);font-family:'Rajdhani',sans-serif;font-weight:600;text-align:center}
+.sli-input{padding:4px 6px;font-size:12px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);font-family:'Quantico',sans-serif;font-weight:600;text-align:center}
+.sli-sel{padding:4px 4px;font-size:12px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);font-family:'Quantico',sans-serif;width:auto;min-width:0}
 .shift-list-time{font-family:'Quantico',sans-serif;font-weight:400;flex:1;color:#aaddff}
 .shift-list-amt{font-family:'Quantico',sans-serif;color:#ffffff;font-weight:700;text-shadow:0 0 8px #00aaff,0 0 16px #00aaff}
 .divider{border:none;border-top:1.5px solid var(--border);margin:14px 0}
@@ -936,7 +967,7 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
       </div>
     </div>
     <div class="break-row">
-      <div><label>休憩（分）</label><input type="number" id="m-break" value="0" min="0"></div>
+      <div><label>休憩（分）</label><select id="m-break"><option value="0" selected>0分</option><option value="15">15分</option><option value="30">30分</option><option value="45">45分</option><option value="60">60分</option><option value="90">90分</option></select></div>
       <div><label>メモ（任意）</label><input type="text" id="m-memo" placeholder=""></div>
     </div>
     <div class="flex-end">
