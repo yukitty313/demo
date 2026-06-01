@@ -156,7 +156,6 @@ window.renderDash = function(){
   const aa=document.getElementById('alertArea');
   if(pct>=90) aa.innerHTML=`<div class="alert danger">⚠️ 年収上限の${Math.round(pct)}%に達しています。残り${fm(remain)}です。</div>`;
   else if(pct>=70) aa.innerHTML=`<div class="alert warn">📊 上限の${Math.round(pct)}%に到達。残り${fm(remain)}（月平均${fm(avg)}）</div>`;
-  else if(total>0) aa.innerHTML=`<div class="alert ok">✅ 順調です。残り${fm(remain)}、月平均${fm(avg)}まで働けます。</div>`;
   else aa.innerHTML='';
 
   const mn=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
