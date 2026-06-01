@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>扶養内収入管理</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -160,34 +159,27 @@ window.renderDash = function(){
   else aa.innerHTML='';
 
   const mn=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-  document.getElementById('monthRow').innerHTML=mn.map((n,i)=>`
-    <div class="month-card ${i===curMo&&now.getFullYear()===S.year?'cur':''}" onclick="jumpMonth(${i})">
+  const maxAmt=Math.max(...amt,1);
+  document.getElementById('monthRow').innerHTML=mn.map((n,i)=>{
+    const isCur=i===curMo&&now.getFullYear()===S.year;
+    const hasData=amt[i]>0;
+    const pct=Math.round(amt[i]/maxAmt*100);
+    const dispPct=hasData?pct+'%':'—';
+    return `<div class="month-card ${isCur?'cur':''} ${hasData?'has-data':''}" onclick="jumpMonth(${i})">
+      <div class="mc-bg" style="width:${pct}%"></div>
       <div class="mname">${n}</div>
-      <div class="mamt">${fms(amt[i])}</div>
-      <div class="mhrs">${hrs[i].toFixed(1)}h</div>
-    </div>`).join('');
-  renderChart(amt);
+      <div class="mc-mid">
+        <div class="mamt ${hasData?'':'zero'}">${fms(amt[i])}</div>
+        <div class="mhrs">${hrs[i].toFixed(1)}h</div>
+      </div>
+      <div class="mc-bar-wrap">
+        <div class="mc-bar-bg"><div class="mc-bar-fill" style="width:${pct}%"></div></div>
+        <div class="mc-pct">${dispPct}</div>
+      </div>
+    </div>`;
+  }).join('');
 };
 
-function renderChart(amt){
-  const ctx=document.getElementById('incomeChart').getContext('2d');
-  if(chartInst) chartInst.destroy();
-  chartInst=new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
-      datasets:[{label:'収入',data:amt.map(a=>Math.round(a)),backgroundColor:'#5e8ef5',borderRadius:5,borderWidth:0}]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'¥'+Math.round(c.parsed.y).toLocaleString('ja-JP')+'円'}}},
-      scales:{
-        x:{ticks:{color:'#8496c8',font:{size:11},autoSkip:false,maxRotation:0},grid:{display:false},border:{display:false}},
-        y:{ticks:{color:'#8496c8',font:{size:10},callback:v=>'¥'+Math.round(v).toLocaleString('ja-JP')+'円'},grid:{color:'rgba(59,110,240,.06)'},border:{display:false}}
-      }
-    }
-  });
-}
 
 /* ===== CALENDAR ===== */
 window.renderCal = function(){
@@ -481,7 +473,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 .container{max-width:760px;margin:0 auto;padding:16px 16px 80px}
 .tabs{display:flex;gap:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:0 0 12px 12px;padding:6px 10px 8px;margin-bottom:0;box-shadow:0 2px 12px rgba(59,110,240,.1);position:sticky;top:46px;z-index:99}
-.tab{flex:1;padding:9px 4px;font-size:13px;font-weight:700;border:none;border-radius:9px;cursor:pointer;background:transparent;color:var(--text2);font-family:'Nunito','Noto Sans JP',sans-serif;transition:all .18s;text-align:center}
+.tab{flex:1;padding:8px 2px;font-size:11px;font-weight:700;border:none;border-radius:9px;cursor:pointer;background:transparent;color:var(--text2);font-family:'Nunito','Noto Sans JP',sans-serif;transition:all .18s;text-align:center}
 .tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(59,110,240,.35)}
 .tab:hover:not(.active){background:var(--surface2);color:var(--text)}
 .card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;box-shadow:0 2px 10px rgba(59,110,240,.07)}
@@ -504,16 +496,23 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .alert.warn{background:var(--warn-light);color:var(--warn);border-color:var(--warn)}
 .alert.danger{background:var(--danger-light);color:var(--danger);border-color:var(--danger)}
 .alert.ok{background:var(--ok-light);color:var(--ok);border-color:var(--ok)}
-.month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-@media(min-width:480px){.month-grid{grid-template-columns:repeat(4,1fr)}}
-@media(min-width:640px){.month-grid{grid-template-columns:repeat(6,1fr)}}
-.month-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 10px 8px;cursor:pointer;transition:all .15s}
-.month-card:hover{border-color:var(--accent2);transform:translateY(-1px);box-shadow:0 2px 8px rgba(59,110,240,.15)}
-.month-card.cur{border-color:var(--accent);border-width:2px;background:var(--accent-light)}
+.month-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.month-card{display:flex;align-items:center;padding:10px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.month-card:hover{border-color:var(--accent2)}
+.month-card.cur{border-color:var(--accent);background:var(--accent-light)}
+.month-card.has-data{border-left:3px solid var(--accent2)}
+.mc-bg{position:absolute;left:0;top:0;bottom:0;background:rgba(94,142,245,.06);pointer-events:none}
+.mname{font-size:13px;font-weight:800;color:var(--text);width:30px;flex-shrink:0;font-family:'Nunito',sans-serif}
 .month-card.cur .mname{color:var(--accent)}
-.mname{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:3px;font-family:'Nunito',sans-serif}
-.mamt{font-size:12px;font-weight:700;color:var(--teal);font-family:'Rajdhani',sans-serif}
-.mhrs{font-size:10px;color:var(--text3);margin-top:2px;font-family:'Rajdhani',sans-serif}
+.mc-mid{flex:1;padding:0 10px}
+.mamt{font-size:15px;font-weight:700;color:var(--text);font-family:'Rajdhani',sans-serif;line-height:1.1}
+.mamt.zero{color:var(--text3)}
+.mhrs{font-size:10px;color:var(--text3);font-family:'Rajdhani',sans-serif;margin-top:1px}
+.mc-bar-wrap{width:56px;flex-shrink:0}
+.mc-bar-bg{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.mc-bar-fill{height:100%;border-radius:2px;background:var(--accent2)}
+.mc-pct{font-size:10px;color:var(--text3);font-family:'Rajdhani',sans-serif;text-align:right;margin-top:2px}
+.month-list-label{font-size:11px;font-weight:800;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;font-family:'Nunito',sans-serif}
 .chart-wrap{position:relative;width:100%;height:200px}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .cal-nav-title{font-size:17px;font-weight:800;color:var(--text);font-family:'Nunito',sans-serif}
@@ -631,11 +630,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
         <div class="pbar"><div class="pfill ok" id="pfill" style="width:0%"></div></div>
         <div class="progress-footer"><span>¥0</span><span id="limit-label">上限 ¥1,230,000</span></div>
       </div>
-      <div class="month-grid" id="monthRow"></div>
-      <div class="card" style="padding:16px 18px">
-        <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:10px;font-family:'Nunito',sans-serif">月別収入</div>
-        <div class="chart-wrap"><canvas id="incomeChart" role="img" aria-label="月別収入棒グラフ">月別収入データ</canvas></div>
-      </div>
+      <div class="month-list-label">月別収入</div><div class="month-list" id="monthRow"></div>
+
     </div>
 
     <div id="tab-cal" style="display:none;margin-top:16px">
