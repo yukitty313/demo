@@ -6,174 +6,181 @@
 <title>扶養内収入管理</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
 
-  :root {
-    --bg: #f5f4f0;
-    --surface: #ffffff;
-    --surface2: #f0efe9;
-    --border: #e2e0d8;
-    --border2: #cccab8;
-    --text: #1a1a18;
-    --text2: #6b6960;
-    --text3: #9e9c92;
-    --green: #1a7a52;
-    --green-light: #e6f4ed;
-    --green-mid: #5daa82;
-    --amber: #9a6200;
-    --amber-light: #fdf3e0;
-    --red: #b03030;
-    --red-light: #fceaea;
-    --blue: #1a5fa0;
-    --blue-light: #e8f2fc;
-    --radius: 10px;
-    --radius-sm: 6px;
-    --shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 12px rgba(0,0,0,.04);
-  }
+:root {
+  --bg: #e8f0fe;
+  --surface: #ffffff;
+  --surface2: #f0f4ff;
+  --surface3: #dde8fd;
+  --border: #c2d0f5;
+  --border2: #97b0ef;
+  --text: #1c2a5e;
+  --text2: #4a5d9a;
+  --text3: #8496c8;
+  --accent: #3b6ef0;
+  --accent2: #5e8ef5;
+  --accent-light: #dce8ff;
+  --teal: #0fb8c9;
+  --teal-light: #d6f5f8;
+  --violet: #7c5cfc;
+  --violet-light: #ede8ff;
+  --warn: #e07c20;
+  --warn-light: #fff0e0;
+  --danger: #e03060;
+  --danger-light: #ffe0e8;
+  --ok: #10a86a;
+  --ok-light: #d6f5e8;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --radius-xs: 6px;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  .header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-  .header-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-  .year-badge { font-size: 12px; font-weight: 500; background: var(--green-light); color: var(--green); padding: 4px 12px; border-radius: 20px; font-family: 'DM Mono', monospace; }
+.header {
+  background: var(--accent);
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-title { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; font-family: 'Nunito', sans-serif; }
+.header-icon { width: 28px; height: 28px; background: rgba(255,255,255,.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.year-badge { font-size: 12px; font-weight: 700; background: rgba(255,255,255,.2); color: #fff; padding: 4px 14px; border-radius: 20px; font-family: 'DM Mono', monospace; letter-spacing: .5px; }
 
-  .container { max-width: 760px; margin: 0 auto; padding: 20px 16px 80px; }
+.container { max-width: 760px; margin: 0 auto; padding: 20px 16px 80px; }
 
-  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 20px; box-shadow: var(--shadow); }
-  .tab { flex: 1; padding: 8px 4px; font-size: 13px; font-weight: 500; border: none; border-radius: var(--radius-sm); cursor: pointer; background: transparent; color: var(--text2); font-family: 'Noto Sans JP', sans-serif; transition: all .15s; text-align: center; }
-  .tab.active { background: var(--green); color: #fff; }
-  .tab:hover:not(.active) { background: var(--surface2); color: var(--text); }
+.tabs { display: flex; gap: 4px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(59,110,240,.1); }
+.tab { flex: 1; padding: 9px 4px; font-size: 13px; font-weight: 700; border: none; border-radius: 9px; cursor: pointer; background: transparent; color: var(--text2); font-family: 'Nunito', 'Noto Sans JP', sans-serif; transition: all .18s; text-align: center; }
+.tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(59,110,240,.35); }
+.tab:hover:not(.active) { background: var(--surface2); color: var(--text); }
 
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; box-shadow: var(--shadow); }
-  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-  .card-title svg { width: 16px; height: 16px; color: var(--green); }
+.card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(59,110,240,.07); }
+.card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--text); font-family: 'Nunito', sans-serif; }
 
-  .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
-  @media(min-width:520px){ .metric-grid { grid-template-columns: repeat(4, 1fr); } }
-  .metric { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px 14px; }
-  .metric-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; font-weight: 500; }
-  .metric-value { font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text); }
-  .metric-value.ok { color: var(--green); }
-  .metric-value.warn { color: var(--amber); }
-  .metric-value.danger { color: var(--red); }
+.metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+@media(min-width:520px){ .metric-grid { grid-template-columns: repeat(4, 1fr); } }
+.metric { background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 13px 14px; }
+.metric-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; font-weight: 700; font-family: 'Nunito', sans-serif; letter-spacing: .3px; }
+.metric-value { font-size: 16px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text); }
+.metric-value.ok { color: var(--ok); }
+.metric-value.warn { color: var(--warn); }
+.metric-value.danger { color: var(--danger); }
 
-  .progress-wrap { margin-bottom: 6px; }
-  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
-  .progress-pct { font-family: 'DM Mono', monospace; font-weight: 700; font-size: 15px; }
-  .pbar { height: 10px; background: var(--surface2); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
-  .pfill { height: 100%; border-radius: 5px; transition: width .4s ease; }
-  .pfill.ok { background: var(--green); }
-  .pfill.warn { background: #d4900a; }
-  .pfill.danger { background: var(--red); }
-  .progress-footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-top: 5px; font-family: 'DM Mono', monospace; }
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.progress-pct { font-family: 'DM Mono', monospace; font-weight: 700; font-size: 15px; color: var(--accent); }
+.pbar { height: 12px; background: var(--surface3); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.pfill { height: 100%; border-radius: 6px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.pfill.ok { background: linear-gradient(90deg, #10a86a, #0fb8c9); }
+.pfill.warn { background: linear-gradient(90deg, #e07c20, #f0a830); }
+.pfill.danger { background: linear-gradient(90deg, #e03060, #f05080); }
+.progress-footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-top: 5px; font-family: 'DM Mono', monospace; }
 
-  .alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 14px; font-weight: 500; border-left: 3px solid; }
-  .alert.warn { background: var(--amber-light); color: var(--amber); border-color: #d4900a; }
-  .alert.danger { background: var(--red-light); color: var(--red); border-color: var(--red); }
-  .alert.ok { background: var(--green-light); color: var(--green); border-color: var(--green); }
+.alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 14px; font-weight: 600; border-left: 3px solid; font-family: 'Nunito', 'Noto Sans JP', sans-serif; }
+.alert.warn { background: var(--warn-light); color: var(--warn); border-color: var(--warn); }
+.alert.danger { background: var(--danger-light); color: var(--danger); border-color: var(--danger); }
+.alert.ok { background: var(--ok-light); color: var(--ok); border-color: var(--ok); }
 
-  .month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
-  @media(min-width:480px){ .month-grid { grid-template-columns: repeat(4, 1fr); } }
-  @media(min-width:640px){ .month-grid { grid-template-columns: repeat(6, 1fr); } }
-  .month-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 10px 8px; cursor: pointer; transition: all .15s; }
-  .month-card:hover { border-color: var(--green-mid); box-shadow: 0 2px 8px rgba(26,122,82,.1); }
-  .month-card.cur { border-color: var(--green); border-width: 2px; }
-  .month-card.cur .mname { color: var(--green); }
-  .mname { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 3px; }
-  .mamt { font-size: 13px; font-weight: 700; color: var(--green); font-family: 'DM Mono', monospace; }
-  .mhrs { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+@media(min-width:480px){ .month-grid { grid-template-columns: repeat(4, 1fr); } }
+@media(min-width:640px){ .month-grid { grid-template-columns: repeat(6, 1fr); } }
+.month-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 10px 8px; cursor: pointer; transition: all .15s; }
+.month-card:hover { border-color: var(--accent2); box-shadow: 0 2px 8px rgba(59,110,240,.15); transform: translateY(-1px); }
+.month-card.cur { border-color: var(--accent); border-width: 2px; background: var(--accent-light); }
+.month-card.cur .mname { color: var(--accent); }
+.mname { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 3px; font-family: 'Nunito', sans-serif; }
+.mamt { font-size: 12px; font-weight: 700; color: var(--teal); font-family: 'DM Mono', monospace; }
+.mhrs { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
 
-  .chart-wrap { position: relative; width: 100%; height: 200px; }
+.chart-wrap { position: relative; width: 100%; height: 200px; }
 
-  /* Calendar */
-  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .cal-nav-title { font-size: 16px; font-weight: 700; }
-  .cal-nav-btn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); width: 34px; height: 34px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all .15s; color: var(--text); }
-  .cal-nav-btn:hover { background: var(--surface2); border-color: var(--border2); }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-  .cal-dow { text-align: center; font-size: 11px; font-weight: 700; padding: 6px 0 4px; color: var(--text3); }
-  .cal-dow:first-child { color: var(--red); }
-  .cal-dow:last-child { color: var(--blue); }
-  .cal-cell { min-height: 62px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px; cursor: pointer; background: var(--surface); transition: all .12s; overflow: hidden; }
-  .cal-cell:hover { border-color: var(--green-mid); z-index: 1; }
-  .cal-cell.other { background: var(--surface2); opacity: .55; pointer-events: none; }
-  .cal-cell.today { border-color: var(--green); border-width: 2px; }
-  .cal-cell.has-shift { background: var(--green-light); }
-  .day-num { font-size: 11px; font-weight: 700; color: var(--text2); line-height: 1; }
-  .cal-cell.sun .day-num { color: var(--red); }
-  .cal-cell.sat .day-num { color: var(--blue); }
-  .shift-badge { display: block; font-size: 9.5px; color: var(--green); background: rgba(26,122,82,.12); border-radius: 3px; padding: 1px 3px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'DM Mono', monospace; }
-  .shift-amt { display: block; font-size: 10px; font-weight: 700; color: var(--green); margin-top: 2px; font-family: 'DM Mono', monospace; }
-  .cal-summary { font-size: 12px; color: var(--text2); margin-top: 8px; margin-bottom: 4px; font-weight: 500; font-family: 'DM Mono', monospace; }
+/* Calendar */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal-nav-title { font-size: 17px; font-weight: 800; color: var(--text); font-family: 'Nunito', sans-serif; }
+.cal-nav-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: 9px; width: 36px; height: 36px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all .15s; color: var(--accent); font-weight: 700; }
+.cal-nav-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-dow { text-align: center; font-size: 11px; font-weight: 800; padding: 6px 0 5px; color: var(--text3); font-family: 'Nunito', sans-serif; }
+.cal-dow:first-child { color: var(--danger); }
+.cal-dow:last-child { color: var(--accent); }
+.cal-cell { min-height: 64px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); padding: 5px; cursor: pointer; background: var(--surface); transition: all .12s; overflow: hidden; }
+.cal-cell:hover { border-color: var(--accent2); background: var(--accent-light); }
+.cal-cell.other { background: var(--surface2); opacity: .45; pointer-events: none; }
+.cal-cell.today { border-color: var(--teal); border-width: 2px; background: var(--teal-light); }
+.cal-cell.has-shift { background: var(--violet-light); border-color: var(--violet); }
+.day-num { font-size: 11px; font-weight: 800; color: var(--text2); line-height: 1; font-family: 'Nunito', sans-serif; }
+.cal-cell.sun .day-num { color: var(--danger); }
+.cal-cell.sat .day-num { color: var(--accent); }
+.shift-badge { display: block; font-size: 9.5px; color: var(--violet); background: rgba(124,92,252,.13); border-radius: 3px; padding: 1px 3px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'DM Mono', monospace; }
+.shift-amt { display: block; font-size: 10px; font-weight: 700; color: var(--ok); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.cal-summary { font-size: 12px; color: var(--text2); margin-top: 8px; margin-bottom: 4px; font-weight: 600; font-family: 'DM Mono', monospace; }
 
-  /* Modal */
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
-  .overlay.open { display: flex; }
-  .modal { background: var(--surface); border-radius: var(--radius); padding: 22px; width: 100%; max-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,.18); }
-  .modal-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
-  .modal-date { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+/* Modal */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(28,42,94,.45); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+.overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius); padding: 22px; width: 100%; max-width: 380px; box-shadow: 0 8px 40px rgba(59,110,240,.22); border: 1.5px solid var(--border); }
+.modal-title { font-size: 16px; font-weight: 800; margin-bottom: 14px; color: var(--text); font-family: 'Nunito', sans-serif; }
 
-  /* Forms */
-  label { font-size: 12px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 4px; }
-  input[type=text], input[type=number], select { width: 100%; padding: 8px 11px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; outline: none; transition: border .15s; }
-  input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,122,82,.12); }
-  .form-group { margin-bottom: 12px; }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+/* Drum roll picker */
+.drum-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.drum-label { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 5px; font-family: 'Nunito', sans-serif; }
+.drum-wrap { display: flex; gap: 4px; align-items: center; }
+.drum { width: 58px; height: 120px; overflow: hidden; border: 1.5px solid var(--border); border-radius: 9px; position: relative; background: var(--surface2); cursor: grab; user-select: none; }
+.drum.grabbing { cursor: grabbing; }
+.drum-inner { position: absolute; top: 0; left: 0; width: 100%; transition: none; }
+.drum-item { height: 40px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text3); transition: color .1s, font-size .1s; }
+.drum-item.selected { color: var(--accent); font-size: 22px; }
+.drum-sep { font-size: 22px; font-weight: 800; color: var(--text2); align-self: center; padding-bottom: 0; }
+.drum-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.drum-overlay::before, .drum-overlay::after { content: ''; position: absolute; left: 0; right: 0; height: 40px; z-index: 2; }
+.drum-overlay::before { top: 0; background: linear-gradient(to bottom, var(--surface2), transparent); }
+.drum-overlay::after { bottom: 0; background: linear-gradient(to top, var(--surface2), transparent); }
+.drum-highlight { position: absolute; top: 40px; left: 4px; right: 4px; height: 40px; border-radius: 6px; background: var(--accent-light); border: 1.5px solid var(--border2); pointer-events: none; z-index: 1; }
 
-  /* Buttons */
-  .btn { padding: 8px 18px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
-  .btn:hover { background: var(--surface2); border-color: var(--border2); }
-  .btn-primary { background: var(--green); color: #fff; border-color: var(--green); }
-  .btn-primary:hover { background: #155f3f; border-color: #155f3f; }
-  .btn-danger { color: var(--red); }
-  .btn-danger:hover { background: var(--red-light); border-color: var(--red); }
-  .btn-sm { padding: 5px 12px; font-size: 12px; }
-  .btn-xs { padding: 3px 9px; font-size: 11px; }
-  .flex-end { display: flex; justify-content: flex-end; gap: 8px; }
-  .flex-between { display: flex; justify-content: space-between; align-items: center; }
-  .flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* Forms */
+label { font-size: 12px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 4px; font-family: 'Nunito', sans-serif; }
+input[type=text], input[type=number], select { width: 100%; padding: 9px 12px; font-size: 13px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; outline: none; transition: border .15s; }
+input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,110,240,.12); }
+.form-group { margin-bottom: 12px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 
-  /* Shift list in modal */
-  .shift-list-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--green-light); border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 13px; }
-  .shift-list-time { font-family: 'DM Mono', monospace; font-weight: 500; flex: 1; }
-  .shift-list-amt { font-family: 'DM Mono', monospace; color: var(--green); font-weight: 700; }
-  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+/* Buttons */
+.btn { padding: 9px 18px; font-size: 13px; font-weight: 700; border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); color: var(--text); font-family: 'Nunito', 'Noto Sans JP', sans-serif; transition: all .15s; }
+.btn:hover { background: var(--surface2); border-color: var(--border2); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: #2a5ae0; border-color: #2a5ae0; }
+.btn-danger { color: var(--danger); }
+.btn-danger:hover { background: var(--danger-light); border-color: var(--danger); }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-xs { padding: 3px 9px; font-size: 11px; }
+.flex-end { display: flex; justify-content: flex-end; gap: 8px; }
+.flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-  /* Wage list */
-  .wage-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border-radius: var(--radius-sm); margin-bottom: 8px; font-size: 13px; }
-  .wage-period { flex: 1; color: var(--text2); font-size: 12px; }
-  .wage-rate { font-family: 'DM Mono', monospace; font-weight: 700; }
+/* Shift list in modal */
+.shift-list-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--violet-light); border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 13px; border: 1px solid rgba(124,92,252,.2); }
+.shift-list-time { font-family: 'DM Mono', monospace; font-weight: 600; flex: 1; color: var(--violet); }
+.shift-list-amt { font-family: 'DM Mono', monospace; color: var(--ok); font-weight: 700; }
+.divider { border: none; border-top: 1.5px solid var(--border); margin: 14px 0; }
 
-  /* Preset buttons */
-  .preset-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-  .preset-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); border-radius: 20px; cursor: pointer; background: var(--surface); color: var(--text2); font-family: 'DM Mono', monospace; transition: all .15s; }
-  .preset-btn:hover { background: var(--green-light); border-color: var(--green); color: var(--green); }
-  .preset-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+/* Wage list */
+.wage-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; font-size: 13px; }
+.wage-period { flex: 1; color: var(--text2); font-size: 12px; }
+.wage-rate { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--accent); }
 
-  .separator { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
-  .section-label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
-  .hint { font-size: 12px; color: var(--text3); margin-bottom: 10px; }
-  .empty-state { text-align: center; padding: 24px; color: var(--text3); font-size: 13px; }
+.separator { border: none; border-top: 1.5px solid var(--border); margin: 18px 0; }
+.section-label { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 10px; font-family: 'Nunito', sans-serif; }
+.empty-state { text-align: center; padding: 24px; color: var(--text3); font-size: 13px; }
+
+.break-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-title">
-    <div class="dot"></div>
+    <div class="header-icon">💰</div>
     扶養内収入管理
   </div>
   <span class="year-badge" id="yearBadge">2026年</span>
@@ -198,7 +205,7 @@
     </div>
     <div class="card">
       <div class="progress-header">
-        <span style="font-size:13px;font-weight:500;color:var(--text2)">年間進捗</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text2);font-family:'Nunito',sans-serif">年間進捗</span>
         <span class="progress-pct" id="pct-label">0%</span>
       </div>
       <div class="pbar"><div class="pfill ok" id="pfill" style="width:0%"></div></div>
@@ -206,7 +213,7 @@
     </div>
     <div class="month-grid" id="monthRow"></div>
     <div class="card" style="padding:16px 18px">
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">月別収入</div>
+      <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:10px;font-family:'Nunito',sans-serif">月別収入</div>
       <div class="chart-wrap"><canvas id="incomeChart" role="img" aria-label="月別収入棒グラフ">月別収入データ</canvas></div>
     </div>
   </div>
@@ -249,17 +256,15 @@
   <div id="tab-cfg" style="display:none">
     <div class="card">
       <div class="section-label">年収上限</div>
-      <div class="preset-btns" id="presetBtns">
-        <button class="preset-btn active" onclick="setLimit(1230000)">123万</button>
-        <button class="preset-btn" onclick="setLimit(1030000)">103万</button>
-        <button class="preset-btn" onclick="setLimit(1060000)">106万</button>
-        <button class="preset-btn" onclick="setLimit(1300000)">130万</button>
-        <button class="preset-btn" onclick="setLimit(1500000)">150万</button>
-      </div>
-      <div class="flex-row" style="margin-bottom:10px">
-        <label style="display:inline;margin:0;white-space:nowrap;font-size:13px">カスタム：</label>
-        <input type="number" id="customLimit" placeholder="例：1230000" style="width:180px">
-        <button class="btn" onclick="setCustomLimit()">設定</button>
+      <div style="margin-bottom:14px">
+        <div style="margin-bottom:8px">
+          <button class="btn" id="preset-123" onclick="setLimit(1230000)" style="margin-right:6px;margin-bottom:6px">123万円</button>
+        </div>
+        <div class="flex-row">
+          <label style="display:inline;margin:0;white-space:nowrap">カスタム（円）：</label>
+          <input type="number" id="customLimit" placeholder="例：1230000" style="width:180px">
+          <button class="btn btn-primary" onclick="setCustomLimit()">設定</button>
+        </div>
       </div>
       <div style="font-size:13px;color:var(--text2)">現在の上限：<span id="limitDisp" style="font-weight:700;color:var(--text);font-family:'DM Mono',monospace">¥1,230,000</span></div>
 
@@ -271,7 +276,7 @@
       </div>
 
       <div class="separator"></div>
-      <div class="section-label" style="color:var(--red)">データ管理</div>
+      <div class="section-label" style="color:var(--danger)">データ管理</div>
       <button class="btn btn-danger" onclick="clearAll()">全データを削除</button>
     </div>
   </div>
@@ -283,16 +288,32 @@
     <div class="modal-title" id="modalTitle">シフト入力</div>
     <div id="modalExisting"></div>
     <hr class="divider">
-    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">新しいシフトを追加</div>
-    <div class="row2">
-      <div class="form-group"><label>開始時刻</label><input type="text" id="m-start" placeholder="9:00"></div>
-      <div class="form-group"><label>終了時刻</label><input type="text" id="m-end" placeholder="17:00"></div>
+    <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:12px;font-family:'Nunito',sans-serif">新しいシフトを追加</div>
+
+    <!-- ドラムロール時刻選択 -->
+    <div class="drum-row">
+      <div>
+        <div class="drum-label">開始時刻</div>
+        <div class="drum-wrap" id="drum-start-wrap"></div>
+      </div>
+      <div>
+        <div class="drum-label">終了時刻</div>
+        <div class="drum-wrap" id="drum-end-wrap"></div>
+      </div>
     </div>
-    <div class="row2">
-      <div class="form-group"><label>休憩（分）</label><input type="number" id="m-break" value="60" min="0"></div>
-      <div class="form-group"><label>メモ（任意）</label><input type="text" id="m-memo" placeholder=""></div>
+
+    <div class="break-row">
+      <div class="form-group" style="margin-bottom:0">
+        <label>休憩（分）</label>
+        <input type="number" id="m-break" value="60" min="0">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>メモ（任意）</label>
+        <input type="text" id="m-memo" placeholder="">
+      </div>
     </div>
-    <div class="flex-end">
+
+    <div class="flex-end" style="margin-top:14px">
       <button class="btn btn-sm" onclick="closeModal()">キャンセル</button>
       <button class="btn btn-primary btn-sm" onclick="saveShift()">追加</button>
     </div>
@@ -304,31 +325,31 @@ let S = { shifts: [], wages: [{ start: '2026/1/1', end: '', rate: 1120 }], limit
 let calYear = 2026, calMonth = 0, activeDate = null, chartInst = null;
 
 function load() {
-  try { const d = localStorage.getItem('fuyou_v3'); if (d) Object.assign(S, JSON.parse(d)); } catch (e) {}
+  try { const d = localStorage.getItem('fuyou_v4'); if (d) Object.assign(S, JSON.parse(d)); } catch(e) {}
 }
 function save() {
-  try { localStorage.setItem('fuyou_v3', JSON.stringify(S)); } catch (e) {}
+  try { localStorage.setItem('fuyou_v4', JSON.stringify(S)); } catch(e) {}
 }
-
 function pd(s) {
   if (!s) return null;
   const m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
-  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
 }
 function pt(s) {
   if (!s) return null;
   const m = s.match(/(\d{1,2}):(\d{2})/);
-  return m ? +m[1] * 60 + +m[2] : null;
+  return m ? +m[1]*60 + +m[2] : null;
 }
-function fm(n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); }
-function dateKey(y, mo, d) { return `${y}/${String(mo + 1).padStart(2, '0')}/${String(d).padStart(2, '0')}`; }
-function uid() { return Math.random().toString(36).slice(2, 9); }
+function fm(n) { return '¥' + Math.round(n).toLocaleString('ja-JP') + '円'; }
+function fmShort(n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+function dateKey(y, mo, d) { return `${y}/${String(mo+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`; }
+function uid() { return Math.random().toString(36).slice(2,9); }
 
 function wageFor(dateStr) {
   const dt = pd(dateStr); if (!dt) return 1000;
   let best = null;
   for (const w of S.wages) {
-    const ws = pd(w.start), we = w.end ? pd(w.end) : new Date(2099, 11, 31);
+    const ws = pd(w.start), we = w.end ? pd(w.end) : new Date(2099,11,31);
     if (ws && we && dt >= ws && dt <= we) { if (!best || pd(w.start) >= pd(best.start)) best = w; }
   }
   return best ? best.rate : 1000;
@@ -336,11 +357,11 @@ function wageFor(dateStr) {
 function calcShift(sh) {
   const st = pt(sh.start), et = pt(sh.end); if (st === null || et === null) return 0;
   let m = et - st; if (m < 0) m += 1440; m -= (sh.breakMin || 0);
-  return Math.max(0, m / 60) * wageFor(sh.date);
+  return Math.max(0, m/60) * wageFor(sh.date);
 }
 function calcHours(sh) {
   const st = pt(sh.start), et = pt(sh.end); if (st === null || et === null) return 0;
-  let m = et - st; if (m < 0) m += 1440; m -= (sh.breakMin || 0); return Math.max(0, m / 60);
+  let m = et - st; if (m < 0) m += 1440; m -= (sh.breakMin || 0); return Math.max(0, m/60);
 }
 function monthlyData() {
   const amt = Array(12).fill(0), hrs = Array(12).fill(0);
@@ -354,7 +375,7 @@ function shiftsOn(key) { return S.shifts.filter(s => s.date === key); }
 
 function renderDash() {
   const { amt, hrs } = monthlyData();
-  const total = amt.reduce((a, b) => a + b, 0);
+  const total = amt.reduce((a,b) => a+b, 0);
   const remain = Math.max(0, S.limit - total);
   const now = new Date(), curMo = now.getMonth();
   const remMos = now.getFullYear() === S.year ? Math.max(1, 12 - curMo) : 12;
@@ -370,20 +391,20 @@ function renderDash() {
   document.getElementById('pct-label').textContent = Math.round(pct) + '%';
   const pf = document.getElementById('pfill');
   pf.style.width = pct + '%'; pf.className = 'pfill ' + cls;
-  document.getElementById('limit-label').textContent = '上限 ' + fm(S.limit);
+  document.getElementById('limit-label').textContent = '上限 ' + fmShort(S.limit);
   document.getElementById('yearBadge').textContent = S.year + '年';
 
   const aa = document.getElementById('alertArea');
-  if (pct >= 90) aa.innerHTML = `<div class="alert danger">年収上限の${Math.round(pct)}%に達しています。残り${fm(remain)}です。</div>`;
-  else if (pct >= 70) aa.innerHTML = `<div class="alert warn">上限の${Math.round(pct)}%に到達。残り${fm(remain)}（月平均${fm(avg)}）</div>`;
-  else if (total > 0) aa.innerHTML = `<div class="alert ok">順調です。残り${fm(remain)}、月平均${fm(avg)}まで働けます。</div>`;
+  if (pct >= 90) aa.innerHTML = `<div class="alert danger">⚠️ 年収上限の${Math.round(pct)}%に達しています。残り${fm(remain)}です。</div>`;
+  else if (pct >= 70) aa.innerHTML = `<div class="alert warn">📊 上限の${Math.round(pct)}%に到達。残り${fm(remain)}（月平均${fm(avg)}）</div>`;
+  else if (total > 0) aa.innerHTML = `<div class="alert ok">✅ 順調です。残り${fm(remain)}、月平均${fm(avg)}まで働けます。</div>`;
   else aa.innerHTML = '';
 
-  const mn = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-  document.getElementById('monthRow').innerHTML = mn.map((n, i) => `
-    <div class="month-card ${i === curMo && now.getFullYear() === S.year ? 'cur' : ''}" onclick="jumpMonth(${i})">
+  const mn = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('monthRow').innerHTML = mn.map((n,i) => `
+    <div class="month-card ${i===curMo && now.getFullYear()===S.year ? 'cur' : ''}" onclick="jumpMonth(${i})">
       <div class="mname">${n}</div>
-      <div class="mamt">${fm(amt[i])}</div>
+      <div class="mamt">${fmShort(amt[i])}</div>
       <div class="mhrs">${hrs[i].toFixed(1)}h</div>
     </div>`).join('');
 
@@ -396,28 +417,28 @@ function renderChart(amt) {
   chartInst = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+      labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
       datasets: [{
         label: '収入', data: amt.map(a => Math.round(a)),
-        backgroundColor: '#5daa82', borderRadius: 4, borderWidth: 0
+        backgroundColor: '#5e8ef5', borderRadius: 5, borderWidth: 0
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fm(c.parsed.y) } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '¥' + Math.round(c.parsed.y).toLocaleString('ja-JP') + '円' } } },
       scales: {
-        x: { ticks: { color: '#9e9c92', font: { size: 11 }, autoSkip: false, maxRotation: 0 }, grid: { display: false }, border: { display: false } },
-        y: { ticks: { color: '#9e9c92', font: { size: 11 }, callback: v => '¥' + Math.round(v / 1000) + 'k' }, grid: { color: 'rgba(0,0,0,.05)' }, border: { display: false } }
+        x: { ticks: { color: '#8496c8', font: { size: 11 }, autoSkip: false, maxRotation: 0 }, grid: { display: false }, border: { display: false } },
+        y: { ticks: { color: '#8496c8', font: { size: 10 }, callback: v => '¥' + Math.round(v).toLocaleString('ja-JP') }, grid: { color: 'rgba(59,110,240,.06)' }, border: { display: false } }
       }
     }
   });
 }
 
 function renderCal() {
-  const mn = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  const mn = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   document.getElementById('calTitle').textContent = calYear + '年' + mn[calMonth];
   const first = new Date(calYear, calMonth, 1).getDay();
-  const days = new Date(calYear, calMonth + 1, 0).getDate();
+  const days = new Date(calYear, calMonth+1, 0).getDate();
   const prevDays = new Date(calYear, calMonth, 0).getDate();
   const today = new Date();
   const cellCount = Math.ceil((first + days) / 7) * 7;
@@ -435,17 +456,15 @@ function renderCal() {
     if (dow === 0) cls += ' sun'; if (dow === 6) cls += ' sat';
     if (other) cls += ' other'; if (isToday) cls += ' today'; if (ss.length) cls += ' has-shift';
     let inner = `<span class="day-num">${d}</span>`;
-    for (const s of ss) {
-      inner += `<span class="shift-badge">${s.start}-${s.end}</span>`;
-    }
-    if (ss.length) inner += `<span class="shift-amt">${fm(ss.reduce((a, s) => a + calcShift(s), 0))}</span>`;
-    const clickAttr = other ? '' : `onclick="openModal('${key}')"`;
-    html += `<div class="${cls}" ${clickAttr}>${inner}</div>`;
+    for (const s of ss) inner += `<span class="shift-badge">${s.start}-${s.end}</span>`;
+    if (ss.length) inner += `<span class="shift-amt">${fmShort(ss.reduce((a,s2) => a + calcShift(s2), 0))}</span>`;
+    const ca = other ? '' : `onclick="openModal('${key}')"`;
+    html += `<div class="${cls}" ${ca}>${inner}</div>`;
   }
   document.getElementById('calBody').innerHTML = html;
   const mShifts = S.shifts.filter(s => { const dt = pd(s.date); return dt && dt.getFullYear() === calYear && dt.getMonth() === calMonth; });
-  const mTotal = mShifts.reduce((a, s) => a + calcShift(s), 0);
-  const mHrs = mShifts.reduce((a, s) => a + calcHours(s), 0);
+  const mTotal = mShifts.reduce((a,s) => a + calcShift(s), 0);
+  const mHrs = mShifts.reduce((a,s) => a + calcHours(s), 0);
   document.getElementById('calSummary').textContent = mn[calMonth] + '合計：' + fm(mTotal) + '（' + mHrs.toFixed(1) + '時間 / ' + mShifts.length + '日）';
 }
 
@@ -453,34 +472,147 @@ function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
 function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCal(); }
 function jumpMonth(m) { calYear = S.year; calMonth = m; showTab('cal'); }
 
+/* ---- Drum Roll Picker ---- */
+const HOURS = Array.from({length:24}, (_,i) => String(i).padStart(2,'0'));
+const MINS  = ['00','15','30','45'];
+
+let drums = {};
+
+function makeDrum(id, items, initVal) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  const drumEl = document.createElement('div');
+  drumEl.className = 'drum';
+
+  const highlight = document.createElement('div');
+  highlight.className = 'drum-highlight';
+  drumEl.appendChild(highlight);
+
+  const inner = document.createElement('div');
+  inner.className = 'drum-inner';
+
+  const padded = [...items, ...items, ...items];
+  padded.forEach(v => {
+    const item = document.createElement('div');
+    item.className = 'drum-item';
+    item.textContent = v;
+    inner.appendChild(item);
+  });
+  drumEl.appendChild(inner);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'drum-overlay';
+  drumEl.appendChild(overlay);
+
+  wrap.appendChild(drumEl);
+
+  const n = items.length;
+  let idx = items.indexOf(initVal);
+  if (idx < 0) idx = 0;
+  let curIdx = idx;
+
+  function snapTo(i) {
+    i = ((i % n) + n) % n;
+    curIdx = i;
+    inner.style.transform = `translateY(${(40 - (n + i) * 40)}px)`;
+    inner.querySelectorAll('.drum-item').forEach((el, k) => {
+      el.classList.toggle('selected', k % n === i);
+    });
+  }
+  snapTo(curIdx);
+
+  let startY = 0, startIdx = 0, isDragging = false;
+
+  drumEl.addEventListener('mousedown', e => {
+    isDragging = true; startY = e.clientY; startIdx = curIdx;
+    drumEl.classList.add('grabbing');
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dy = startY - e.clientY;
+    const delta = Math.round(dy / 40);
+    snapTo(startIdx + delta);
+  });
+  document.addEventListener('mouseup', () => { isDragging = false; drumEl.classList.remove('grabbing'); });
+
+  drumEl.addEventListener('touchstart', e => {
+    startY = e.touches[0].clientY; startIdx = curIdx;
+    e.preventDefault();
+  }, { passive: false });
+  drumEl.addEventListener('touchmove', e => {
+    const dy = startY - e.touches[0].clientY;
+    const delta = Math.round(dy / 40);
+    snapTo(startIdx + delta);
+    e.preventDefault();
+  }, { passive: false });
+
+  drumEl.addEventListener('wheel', e => {
+    e.preventDefault();
+    snapTo(curIdx + (e.deltaY > 0 ? 1 : -1));
+  }, { passive: false });
+
+  drums[id] = { getValue: () => items[curIdx], reset: (v) => { const i = items.indexOf(v); snapTo(i >= 0 ? i : 0); } };
+}
+
+function buildDrums(startH='09', startM='00', endH='17', endM='00') {
+  const sw = document.getElementById('drum-start-wrap');
+  const ew = document.getElementById('drum-end-wrap');
+  sw.innerHTML = '';
+  ew.innerHTML = '';
+
+  const sh = document.createElement('div'); sh.id = 'drum-sh';
+  const sm = document.createElement('div'); sm.id = 'drum-sm';
+  const eh = document.createElement('div'); eh.id = 'drum-eh';
+  const em = document.createElement('div'); em.id = 'drum-em';
+
+  const sep1 = document.createElement('span'); sep1.className = 'drum-sep'; sep1.textContent = ':';
+  const sep2 = document.createElement('span'); sep2.className = 'drum-sep'; sep2.textContent = ':';
+
+  sw.appendChild(sh); sw.appendChild(sep1); sw.appendChild(sm);
+  ew.appendChild(eh); ew.appendChild(sep2); ew.appendChild(em);
+
+  makeDrum('drum-sh', HOURS, startH);
+  makeDrum('drum-sm', MINS,  startM);
+  makeDrum('drum-eh', HOURS, endH);
+  makeDrum('drum-em', MINS,  endM);
+}
+
+function getDrumTime(prefix) {
+  const h = drums[`drum-${prefix}h`]?.getValue() || '09';
+  const m = drums[`drum-${prefix}m`]?.getValue() || '00';
+  return `${h}:${m}`;
+}
+
+/* ---- Modal ---- */
 function openModal(key) {
   activeDate = key;
   const dt = pd(key);
-  const dow = ['日', '月', '火', '水', '木', '金', '土'];
-  document.getElementById('modalTitle').textContent = `${dt.getMonth() + 1}月${dt.getDate()}日（${dow[dt.getDay()]}）`;
+  const dow = ['日','月','火','水','木','金','土'];
+  document.getElementById('modalTitle').textContent = `${dt.getMonth()+1}月${dt.getDate()}日（${dow[dt.getDay()]}）`;
   const ss = shiftsOn(key);
   const ex = document.getElementById('modalExisting');
   if (ss.length) {
-    ex.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">登録済みシフト</div>' +
+    ex.innerHTML = '<div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:8px;font-family:Nunito,sans-serif">登録済みシフト</div>' +
       ss.map(s => `<div class="shift-list-item"><span class="shift-list-time">${s.start}〜${s.end}</span><span class="shift-list-amt">${fm(calcShift(s))}</span><button class="btn btn-danger btn-xs" onclick="removeShift('${s.id}')">削除</button></div>`).join('');
   } else { ex.innerHTML = ''; }
-  document.getElementById('m-start').value = '';
-  document.getElementById('m-end').value = '';
+
+  buildDrums('09','00','17','00');
   document.getElementById('m-break').value = '60';
   document.getElementById('m-memo').value = '';
   document.getElementById('overlay').className = 'overlay open';
-  setTimeout(() => document.getElementById('m-start').focus(), 100);
 }
 function closeModal() { document.getElementById('overlay').className = 'overlay'; activeDate = null; }
 function overlayClick(e) { if (e.target === document.getElementById('overlay')) closeModal(); }
 
 function saveShift() {
   if (!activeDate) return;
-  const start = document.getElementById('m-start').value.trim();
-  const end = document.getElementById('m-end').value.trim();
-  if (!pt(start) || !pt(end)) { alert('時刻を正しく入力してください（例：9:00）'); return; }
+  const start = getDrumTime('s');
+  const end   = getDrumTime('e');
   const breakMin = +document.getElementById('m-break').value || 0;
-  const memo = document.getElementById('m-memo').value.trim();
+  const memo  = document.getElementById('m-memo').value.trim();
   S.shifts.push({ id: uid(), date: activeDate, start, end, breakMin, memo });
   save(); closeModal(); renderCal(); renderDash();
 }
@@ -494,7 +626,7 @@ function removeShift(id) {
 function renderWageList() {
   const el = document.getElementById('wageList');
   if (!S.wages.length) { el.innerHTML = '<div class="empty-state">時給が設定されていません</div>'; return; }
-  el.innerHTML = S.wages.sort((a, b) => (pd(a.start) || 0) - (pd(b.start) || 0)).map((w, i) => `
+  el.innerHTML = S.wages.sort((a,b) => (pd(a.start)||0)-(pd(b.start)||0)).map((w,i) => `
     <div class="wage-item">
       <div class="wage-period">${w.start} 〜 ${w.end || '無期限'}</div>
       <div class="wage-rate">¥${w.rate.toLocaleString()}/h</div>
@@ -503,8 +635,8 @@ function renderWageList() {
 }
 function addWage() {
   const start = document.getElementById('w-start').value.trim();
-  const end = document.getElementById('w-end').value.trim();
-  const rate = +document.getElementById('w-rate').value;
+  const end   = document.getElementById('w-end').value.trim();
+  const rate  = +document.getElementById('w-rate').value;
   if (!pd(start) || !rate) { alert('開始日と時給を入力してください'); return; }
   S.wages.push({ start, end, rate });
   save(); renderWageList(); renderDash();
@@ -514,13 +646,9 @@ function addWage() {
 }
 function removeWage(i) { S.wages.splice(i, 1); save(); renderWageList(); renderDash(); }
 
-function setLimit(v, updateBtn) {
+function setLimit(v) {
   S.limit = v;
-  document.getElementById('limitDisp').textContent = fm(v);
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  const presets = [1230000, 1030000, 1060000, 1300000, 1500000];
-  const idx = presets.indexOf(v);
-  if (idx >= 0) document.querySelectorAll('.preset-btn')[idx].classList.add('active');
+  document.getElementById('limitDisp').textContent = fmShort(v);
   save(); renderDash();
 }
 function setCustomLimit() {
@@ -533,22 +661,20 @@ function setYear() {
 }
 function clearAll() {
   if (confirm('全データを削除しますか？この操作は取り消せません。')) {
-    S.shifts = []; S.wages = [{ start: '2026/1/1', end: '', rate: 1120 }]; S.limit = 1230000; S.year = 2026;
+    S.shifts = []; S.wages = [{ start:'2026/1/1', end:'', rate:1120 }]; S.limit = 1230000; S.year = 2026;
     calYear = 2026; calMonth = 0; save(); renderDash(); renderCal(); renderWageList();
   }
 }
 
 function showTab(t) {
-  ['dash', 'cal', 'wage', 'cfg'].forEach(id => { document.getElementById('tab-' + id).style.display = id === t ? '' : 'none'; });
-  document.querySelectorAll('.tab').forEach((el, i) => { el.classList.toggle('active', ['dash', 'cal', 'wage', 'cfg'][i] === t); });
+  ['dash','cal','wage','cfg'].forEach(id => { document.getElementById('tab-'+id).style.display = id === t ? '' : 'none'; });
+  document.querySelectorAll('.tab').forEach((el,i) => { el.classList.toggle('active', ['dash','cal','wage','cfg'][i] === t); });
   if (t === 'dash') renderDash();
   if (t === 'cal') renderCal();
   if (t === 'wage') renderWageList();
 }
 
-// Enterキーでシフト保存
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('overlay').classList.contains('open')) saveShift();
   if (e.key === 'Escape' && document.getElementById('overlay').classList.contains('open')) closeModal();
 });
 
