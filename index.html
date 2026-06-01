@@ -425,6 +425,120 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.getElementById('overlay').classList.contains('open')) closeModal();
 });
 
+/* ===== SHIFT SCAN ===== */
+let scanRows = [];
+
+window.openScanModal = function(){
+  document.getElementById('scanOverlay').className = 'overlay open';
+  document.getElementById('scanStatus').textContent = '';
+  document.getElementById('scanResult').style.display = 'none';
+  document.getElementById('scanBtnRow').style.display = 'none';
+  document.getElementById('scanPreview').style.display = 'none';
+  document.getElementById('scanFileInput').value = '';
+  scanRows = [];
+};
+window.closeScanModal = function(){
+  document.getElementById('scanOverlay').className = 'overlay';
+};
+window.scanOverlayClick = function(e){
+  if(e.target === document.getElementById('scanOverlay')) closeScanModal();
+};
+
+window.onScanFileSelected = async function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const preview = document.getElementById('scanPreview');
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+  document.getElementById('scanStatus').textContent = '🔍 AIがシフト表を解析中...';
+  document.getElementById('scanStatus').style.color = 'var(--accent)';
+  document.getElementById('scanResult').style.display = 'none';
+  document.getElementById('scanBtnRow').style.display = 'none';
+
+  try {
+    const b64 = await fileToBase64(file);
+    const mediaType = file.type || 'image/jpeg';
+    const year = S.year || 2026;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+            { type: 'text', text: `このシフト表から、時間が確定しているシフト（開始時刻・終了時刻が明記されているもの）だけを抽出してください。「非公開」「未定」などは除外してください。年は${year}年です。
+必ずJSONのみで返してください。例：[{"date":"${year}/06/02","start":"17:30","end":"21:00"},{"date":"${year}/06/03","start":"18:00","end":"21:30"}]` }
+          ]
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if(!jsonMatch) throw new Error('JSON not found');
+    scanRows = JSON.parse(jsonMatch[0]);
+    renderScanTable();
+    document.getElementById('scanStatus').textContent = `✅ ${scanRows.length}件のシフトを読み取りました。内容を確認してください。`;
+    document.getElementById('scanStatus').style.color = 'var(--ok)';
+    document.getElementById('scanResult').style.display = 'block';
+    document.getElementById('scanBtnRow').style.display = 'flex';
+  } catch(err) {
+    document.getElementById('scanStatus').textContent = '❌ 読み取りに失敗しました。もう一度お試しください。';
+    document.getElementById('scanStatus').style.color = 'var(--danger)';
+  }
+};
+
+function fileToBase64(file){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function renderScanTable(){
+  const tbody = document.getElementById('scanTableBody');
+  tbody.innerHTML = scanRows.map((row, i) => `
+    <tr id="scan-row-${i}">
+      <td><input value="${row.date}" onchange="scanRows[${i}].date=this.value" style="width:88px"></td>
+      <td><input value="${row.start}" onchange="scanRows[${i}].start=this.value" style="width:52px"></td>
+      <td><input value="${row.end}" onchange="scanRows[${i}].end=this.value" style="width:52px"></td>
+      <td><input value="${row.breakMin||60}" onchange="scanRows[${i}].breakMin=+this.value" style="width:40px" type="number"></td>
+      <td><button class="del-row" onclick="deleteScanRow(${i})">×</button></td>
+    </tr>`).join('');
+}
+
+window.deleteScanRow = function(i){
+  scanRows.splice(i, 1);
+  renderScanTable();
+};
+
+window.applyScanResults = function(){
+  if(!scanRows.length){ alert('シフトがありません'); return; }
+  let added = 0, skipped = 0;
+  for(const row of scanRows){
+    if(!row.date || !row.start || !row.end){ skipped++; continue; }
+    const dup = S.shifts.find(s => s.date === row.date && s.start === row.start && s.end === row.end);
+    if(dup){ skipped++; continue; }
+    S.shifts.push({ id: uid(), date: row.date, start: row.start, end: row.end, breakMin: row.breakMin||60, memo: '' });
+    added++;
+  }
+  saveToFirebase();
+  closeScanModal();
+  renderCal();
+  renderDash();
+  const mo = scanRows[0] ? (new Date(scanRows[0].date).getMonth()) : calMonth;
+  calMonth = mo;
+  renderCal();
+  alert(`${added}件のシフトを反映しました。（重複スキップ：${skipped}件）`);
+};
+
 calMonth=new Date().getMonth();
 </script>
 <style>
@@ -533,6 +647,25 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cal-summary{font-size:12px;color:var(--text2);margin-top:8px;margin-bottom:4px;font-weight:600;font-family:'Rajdhani',sans-serif}
 .overlay{display:none;position:fixed;inset:0;background:rgba(28,42,94,.45);z-index:200;align-items:center;justify-content:center;padding:16px}
 .overlay.open{display:flex}
+.scan-modal{background:var(--surface);border-radius:var(--radius);padding:20px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(59,110,240,.22);border:1.5px solid var(--border);max-height:90vh;overflow-y:auto}
+.upload-area{border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:24px 16px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface2)}
+.upload-area:hover{border-color:var(--accent);background:var(--accent-light)}
+.upload-area input{display:none}
+.upload-icon{font-size:32px;margin-bottom:8px}
+.upload-text{font-size:13px;color:var(--text2);font-weight:600;font-family:'Nunito',sans-serif}
+.upload-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.preview-img{width:100%;max-height:180px;object-fit:contain;border-radius:var(--radius-sm);border:1px solid var(--border);margin-top:10px}
+.scan-result{margin-top:14px}
+.scan-table{width:100%;border-collapse:collapse;font-size:12px}
+.scan-table th{text-align:left;padding:6px 8px;font-weight:700;color:var(--text2);border-bottom:1.5px solid var(--border);font-family:'Nunito',sans-serif;font-size:11px}
+.scan-table td{padding:6px 8px;border-bottom:0.5px solid var(--border);color:var(--text);vertical-align:middle}
+.scan-table input{width:100%;padding:4px 6px;font-size:12px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);font-family:'Rajdhani',sans-serif}
+.scan-table tr:last-child td{border-bottom:none}
+.del-row{background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:0 4px;line-height:1}
+.scan-status{font-size:12px;font-weight:600;color:var(--text2);margin-top:10px;text-align:center;font-family:'Nunito',sans-serif;min-height:20px}
+.scan-btn-row{display:flex;gap:8px;margin-top:12px}
+.import-btn{font-size:11px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius-sm);padding:5px 12px;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap}
+.import-btn:hover{background:rgba(255,255,255,.28)}
 .modal{background:var(--surface);border-radius:var(--radius);padding:22px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(59,110,240,.22);border:1.5px solid var(--border)}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:14px;color:var(--text);font-family:'Nunito',sans-serif}
 .picker-section-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;font-family:'Nunito',sans-serif}
@@ -640,6 +773,9 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
         <span class="cal-nav-title" id="calTitle">2026年1月</span>
         <button class="cal-nav-btn" onclick="calNext()">&#8250;</button>
       </div>
+      <div style="margin-bottom:10px">
+        <button class="btn btn-primary" style="width:100%;font-size:13px" onclick="openScanModal()">📷 シフト表を画像で読み込む</button>
+      </div>
       <div class="card" style="padding:12px">
         <div class="cal-grid">
           <div class="cal-dow">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div>
@@ -690,6 +826,35 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
         <div class="section-label" style="color:var(--danger)">データ管理</div>
         <button class="btn btn-danger" onclick="clearAll()">全データを削除</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- シフトスキャンモーダル -->
+<div class="overlay" id="scanOverlay" onclick="scanOverlayClick(event)">
+  <div class="scan-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:800;color:var(--text);font-family:'Nunito',sans-serif">シフト表を読み込む</div>
+      <button onclick="closeScanModal()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;line-height:1">×</button>
+    </div>
+    <div class="upload-area" onclick="document.getElementById('scanFileInput').click()">
+      <input type="file" id="scanFileInput" accept="image/*" onchange="onScanFileSelected(event)">
+      <div class="upload-icon">🖼️</div>
+      <div class="upload-text">タップして画像を選択</div>
+      <div class="upload-sub">シフト表のスクリーンショットをアップロード</div>
+    </div>
+    <img id="scanPreview" class="preview-img" style="display:none">
+    <div class="scan-status" id="scanStatus"></div>
+    <div class="scan-result" id="scanResult" style="display:none">
+      <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:8px;font-family:'Nunito',sans-serif">読み取り結果（修正できます）</div>
+      <table class="scan-table">
+        <thead><tr><th>日付</th><th>開始</th><th>終了</th><th>休憩</th><th></th></tr></thead>
+        <tbody id="scanTableBody"></tbody>
+      </table>
+    </div>
+    <div class="scan-btn-row" id="scanBtnRow" style="display:none">
+      <button class="btn" style="flex:1;font-size:12px" onclick="closeScanModal()">キャンセル</button>
+      <button class="btn btn-primary" style="flex:2;font-size:12px" onclick="applyScanResults()">カレンダーに反映する</button>
     </div>
   </div>
 </div>
