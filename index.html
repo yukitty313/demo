@@ -64,6 +64,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById('appScreen').style.display = '';
     // userEmail removed from UI
     startListening();
+    setTimeout(loadSavedTheme, 300);
   } else {
     document.getElementById('loginScreen').style.display = '';
     document.getElementById('appScreen').style.display = 'none';
@@ -440,6 +441,7 @@ window.showTab=function(t){
   if(t==='dash') renderDash();
   if(t==='cal')  renderCal();
   if(t==='wage') renderWageList();
+  setTimeout(()=>{ try{ loadSavedTheme(); }catch(e){} }, 50);
 };
 
 document.addEventListener('mousemove',e=>{
@@ -564,6 +566,119 @@ window.applyScanResults = function(){
   calMonth = mo;
   renderCal();
   alert(`${added}件のシフトを反映しました。（重複スキップ：${skipped}件）`);
+};
+
+/* ===== THEME ENGINE ===== */
+const THEMES = {
+  ice: {
+    '--bg':'#020d18','--surface':'#041422','--surface2':'#041e2e','--surface3':'#031018',
+    '--border':'#0099ff30','--border2':'#0099ff60',
+    '--text':'#e0f4ff','--text2':'#66ccff','--text3':'#0099ff80',
+    '--accent':'#0099ff','--accent2':'#66ccff','--accent-light':'#041e33',
+    '--teal':'#00ccff','--teal-light':'#041e2e',
+    '--violet':'#0066ff','--violet-light':'#03112a',
+    '--warn':'#ffaa00','--warn-light':'#1a1000',
+    '--danger':'#ff4466','--danger-light':'#1a0010',
+    '--ok':'#00ccaa','--ok-light':'#001a14',
+    '--header-bg':'#041422','--header-border':'#0099ff44',
+    '--tab-bg':'#041422','--tab-border':'#0099ff30',
+    '--card-bg':'#041422','--card-glass':'none',
+    '--neon-primary':'#0099ff','--neon-secondary':'#66ccff',
+    '--font-title':"'Orbitron',sans-serif",'--font-mono':"'Share Tech Mono',monospace",
+    'bodyBg': '#020d18', 'bodyBgImage': 'none'
+  },
+  cyber: {
+    '--bg':'#0a0010','--surface':'rgba(20,0,40,0.75)','--surface2':'rgba(30,0,60,0.6)','--surface3':'rgba(10,0,25,0.8)',
+    '--border':'#ff00ff35','--border2':'#ff00ff70',
+    '--text':'#f0e0ff','--text2':'#ff80ff','--text3':'#ff00ff60',
+    '--accent':'#ff00ff','--accent2':'#00ffff','--accent-light':'rgba(255,0,255,0.1)',
+    '--teal':'#00ffff','--teal-light':'rgba(0,255,255,0.08)',
+    '--violet':'#cc00ff','--violet-light':'rgba(204,0,255,0.1)',
+    '--warn':'#ffcc00','--warn-light':'rgba(255,200,0,0.1)',
+    '--danger':'#ff0055','--danger-light':'rgba(255,0,85,0.1)',
+    '--ok':'#00ffcc','--ok-light':'rgba(0,255,200,0.08)',
+    '--header-bg':'rgba(10,0,30,0.9)','--header-border':'#ff00ff44',
+    '--tab-bg':'rgba(10,0,30,0.9)','--tab-border':'#ff00ff30',
+    '--card-bg':'rgba(20,0,50,0.6)','--card-glass':'blur(12px)',
+    '--neon-primary':'#ff00ff','--neon-secondary':'#00ffff',
+    '--font-title':"'Orbitron',sans-serif",'--font-mono':"'Share Tech Mono',monospace",
+    'bodyBg': '#0a0010',
+    'bodyBgImage': 'radial-gradient(ellipse at 20% 50%, rgba(120,0,180,0.3) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(0,100,200,0.25) 0%, transparent 50%), radial-gradient(ellipse at 60% 80%, rgba(180,0,120,0.2) 0%, transparent 50%)'
+  }
+};
+
+window.applyTheme = function(name){
+  const t = THEMES[name];
+  if(!t) return;
+  const root = document.documentElement.style;
+  Object.entries(t).forEach(([k,v])=>{
+    if(k.startsWith('--')) root.setProperty(k, v);
+  });
+  document.body.style.background = t.bodyBg;
+  document.body.style.backgroundImage = t.bodyBgImage;
+
+  // glass effect on cards
+  const glass = t['--card-glass'];
+  document.querySelectorAll('.card,.modal,.scan-modal,.login-card').forEach(el=>{
+    el.style.backdropFilter = glass;
+    el.style.webkitBackdropFilter = glass;
+    el.style.background = t['--surface'];
+    if(name === 'cyber'){
+      el.style.boxShadow = `0 0 20px rgba(255,0,255,0.08), inset 0 0 20px rgba(255,0,255,0.03)`;
+      el.style.borderColor = 'rgba(255,0,255,0.25)';
+    } else {
+      el.style.boxShadow = '';
+      el.style.borderColor = '';
+    }
+  });
+
+  // header/tabs
+  const hdr = document.querySelector('.header');
+  if(hdr){
+    hdr.style.background = t['--header-bg'];
+    hdr.style.borderBottomColor = t['--header-border'].replace('44','');
+  }
+  const tabs = document.querySelector('.tabs');
+  if(tabs){
+    tabs.style.background = t['--tab-bg'];
+    tabs.style.borderBottomColor = t['--tab-border'].replace('30','');
+  }
+
+  // neon border on active tab
+  document.querySelectorAll('.tab.active').forEach(el=>{
+    el.style.borderBottomColor = t['--neon-primary'];
+    el.style.color = t['--neon-secondary'];
+  });
+
+  // metric cards
+  document.querySelectorAll('.metric').forEach(el=>{
+    el.style.background = t['--surface2'];
+    if(name === 'cyber'){
+      el.style.border = `1px solid ${t['--neon-primary']}40`;
+      el.style.boxShadow = `0 0 10px ${t['--neon-primary']}15`;
+    } else {
+      el.style.border = '';
+      el.style.boxShadow = '';
+    }
+  });
+
+  // save theme
+  try{ localStorage.setItem('fuyou_theme', name); }catch(e){}
+  S.theme = name;
+  saveToFirebase();
+
+  // update theme buttons
+  document.querySelectorAll('.theme-btn').forEach(b=>{
+    b.style.opacity = b.dataset.theme === name ? '1' : '0.5';
+    b.style.borderWidth = b.dataset.theme === name ? '2px' : '1px';
+  });
+};
+
+window.loadSavedTheme = function(){
+  try{
+    const saved = localStorage.getItem('fuyou_theme') || S.theme || 'ice';
+    applyTheme(saved);
+  }catch(e){ applyTheme('ice'); }
 };
 
 calMonth=new Date().getMonth();
@@ -736,6 +851,7 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
 .cfg-divider{border:none;border-top:1px solid var(--border);margin:0}
 .section-label{font-size:12px;font-weight:700;color:#66ccff;margin-bottom:10px;font-family:'Orbitron',sans-serif;letter-spacing:1px}
 .empty-state{text-align:center;padding:24px;color:var(--text3);font-size:13px}
+[data-cyber] .card,[data-cyber] .modal{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 </style>
 </head>
 <body>
@@ -836,6 +952,19 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
     </div>
 
     <div id="tab-cfg" style="display:none;margin-top:16px">
+      <div class="card" style="padding:14px 16px;margin-bottom:12px">
+        <div class="cfg-label" style="margin-bottom:10px">テーマ</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="theme-btn" data-theme="ice" onclick="applyTheme('ice')"
+            style="padding:10px;border:2px solid #0099ff;border-radius:8px;background:#041422;color:#66ccff;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px">
+            ❄ ICE BLUE
+          </button>
+          <button class="theme-btn" data-theme="cyber" onclick="applyTheme('cyber')"
+            style="padding:10px;border:1px solid #ff00ff;border-radius:8px;background:rgba(20,0,40,0.8);color:#ff80ff;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;opacity:0.5">
+            ⚡ CYBER
+          </button>
+        </div>
+      </div>
       <div class="card" style="padding:14px 16px">
         <div class="cfg-row">
           <div class="cfg-label">年収上限</div>
