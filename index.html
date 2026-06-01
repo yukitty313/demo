@@ -502,7 +502,7 @@ window.onExcelSelected = function(e){
         const dy = String(+dmatch[2]).padStart(2,'0');
         const dateStr = `${year}/${mo}/${dy}`;
 
-        scanRows.push({ date: dateStr, start: startCell, end: endCell, breakMin: 60 });
+        scanRows.push({ date: dateStr, start: startCell, end: endCell, breakMin: 0 });
       }
 
       if(scanRows.length === 0){
@@ -531,7 +531,7 @@ function renderScanTable(){
       <td><input value="${row.date}" onchange="scanRows[${i}].date=this.value" style="width:88px"></td>
       <td><input value="${row.start}" onchange="scanRows[${i}].start=this.value" style="width:52px"></td>
       <td><input value="${row.end}" onchange="scanRows[${i}].end=this.value" style="width:52px"></td>
-      <td><input value="${row.breakMin||60}" onchange="scanRows[${i}].breakMin=+this.value" style="width:40px" type="number"></td>
+      <td><input value="${row.breakMin||0}" onchange="scanRows[${i}].breakMin=+this.value" style="width:40px" type="number"></td>
       <td><button class="del-row" onclick="deleteScanRow(${i})">×</button></td>
     </tr>`).join('');
 }
@@ -548,7 +548,7 @@ window.applyScanResults = function(){
     if(!row.date || !row.start || !row.end){ skipped++; continue; }
     const dup = S.shifts.find(s => s.date === row.date && s.start === row.start && s.end === row.end);
     if(dup){ skipped++; continue; }
-    S.shifts.push({ id: uid(), date: row.date, start: row.start, end: row.end, breakMin: row.breakMin||60, memo: '' });
+    S.shifts.push({ id: uid(), date: row.date, start: row.start, end: row.end, breakMin: row.breakMin||0, memo: '' });
     added++;
   }
   saveToFirebase();
