@@ -31,6 +31,11 @@ let dbUnsubscribe = null;
 
 /* ===== FIREBASE SAVE/LOAD ===== */
 function saveToFirebase(){
+  // shiftsとwagesが存在する場合のみ保存（データ破損防止）
+  if(!S.shifts || !S.wages || !Array.isArray(S.shifts) || !Array.isArray(S.wages)) {
+    console.warn('saveToFirebase: invalid state, skipping', S);
+    return;
+  }
   set(ref(db, DATA_REF), S).catch(e => console.error('save error', e));
 }
 
