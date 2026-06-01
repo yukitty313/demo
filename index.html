@@ -383,7 +383,7 @@ window.renderWageList=function(){
   if(!S.wages||!S.wages.length){el.innerHTML='<div class="empty-state">時給が設定されていません</div>';return;}
   el.innerHTML=S.wages.sort((a,b)=>(pd(a.start)||0)-(pd(b.start)||0)).map((w,i)=>`
     <div class="wage-item">
-      <div class="wage-period">${w.start} 〜 ${w.end||'無期限'}</div>
+      <div class="wage-period">${w.start}<br>〜 ${w.end||'無期限'}</div>
       <div class="wage-rate">¥${w.rate.toLocaleString()}/h</div>
       <button class="btn btn-danger btn-xs" onclick="removeWage(${i})">削除</button>
     </div>`).join('');
@@ -710,7 +710,7 @@ label{font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bot
 input[type=text],input[type=number],input[type=email],input[type=password],select{width:100%;padding:9px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;transition:border .15s}
 input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,110,240,.12)}
 .form-group{margin-bottom:12px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .break-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .btn{padding:9px 18px;font-size:13px;font-weight:700;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;background:var(--surface);color:var(--text);font-family:'Nunito','Noto Sans JP',sans-serif;transition:all .15s}
@@ -819,12 +819,14 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
     <div id="tab-wage" style="display:none;margin-top:16px">
       <div class="card">
         <div class="card-title">時給を追加</div>
-        <div class="row3">
-          <div><label>開始日</label><input type="date" id="w-start"></div>
-          <div><label>終了日（空白=無期限）</label><input type="date" id="w-end"></div>
-          <div><label>時給（円）</label><input type="number" id="w-rate" placeholder="1120" min="0"></div>
+        <div class="row2" style="margin-bottom:10px">
+          <div><label>開始日</label><input type="date" id="w-start" style="width:100%;min-width:0;font-size:12px;padding:7px 6px"></div>
+          <div><label>終了日（空白=無期限）</label><input type="date" id="w-end" style="width:100%;min-width:0;font-size:12px;padding:7px 6px"></div>
         </div>
-        <div class="flex-end"><button class="btn btn-primary" onclick="addWage()">＋ 追加</button></div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:flex-end">
+          <div><label>時給（円）</label><input type="number" id="w-rate" placeholder="1120" min="0" style="width:100%;min-width:0"></div>
+          <button class="btn btn-primary" onclick="addWage()" style="white-space:nowrap;margin-bottom:0;align-self:flex-end">＋ 追加</button>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">設定済み時給</div>
