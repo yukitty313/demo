@@ -374,10 +374,13 @@ window.renderWageList=function(){
     </div>`).join('');
 };
 window.addWage=function(){
-  const start=document.getElementById('w-start').value.trim();
-  const end=document.getElementById('w-end').value.trim();
+  const startRaw=document.getElementById('w-start').value;
+  const endRaw=document.getElementById('w-end').value;
   const rate=+document.getElementById('w-rate').value;
-  if(!pd(start)||!rate){alert('開始日と時給を入力してください');return;}
+  if(!startRaw||!rate){alert('開始日と時給を入力してください');return;}
+  function toSlash(s){ return s?s.replace(/-/g,'/'):'';}
+  const start=toSlash(startRaw);
+  const end=toSlash(endRaw);
   if(!S.wages) S.wages=[];
   S.wages.push({start,end,rate});
   saveToFirebase(); renderWageList(); renderDash();
@@ -580,7 +583,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
 <!-- ログイン画面 -->
 <div id="loginScreen" class="login-wrap">
   <div class="login-card">
-    <div class="login-logo">💰</div>
+    
     <div class="login-title">扶養内収入管理</div>
     <div class="login-sub">ログインしてください</div>
     <label class="login-label">メールアドレス</label>
@@ -597,7 +600,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
   <div class="header">
     <div class="header-left">
       <div class="header-title">
-        <div class="header-icon">💰</div>
+        
         扶養内収入管理
       </div>
     </div>
@@ -662,8 +665,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59
       <div class="card">
         <div class="card-title">時給を追加</div>
         <div class="row3">
-          <div><label>開始日</label><input type="text" id="w-start" placeholder="2026/1/1"></div>
-          <div><label>終了日（空白=無期限）</label><input type="text" id="w-end" placeholder="2026/5/31"></div>
+          <div><label>開始日</label><input type="date" id="w-start"></div>
+          <div><label>終了日（空白=無期限）</label><input type="date" id="w-end"></div>
           <div><label>時給（円）</label><input type="number" id="w-rate" placeholder="1120" min="0"></div>
         </div>
         <div class="flex-end"><button class="btn btn-primary" onclick="addWage()">＋ 追加</button></div>
