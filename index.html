@@ -488,7 +488,8 @@ window.onScanFileSelected = async function(e){
     document.getElementById('scanResult').style.display = 'block';
     document.getElementById('scanBtnRow').style.display = 'flex';
   } catch(err) {
-    document.getElementById('scanStatus').textContent = '❌ 読み取りに失敗しました。もう一度お試しください。';
+    console.error('Scan error:', err);
+    document.getElementById('scanStatus').textContent = '❌ エラー: ' + err.message;
     document.getElementById('scanStatus').style.color = 'var(--danger)';
   }
 };
