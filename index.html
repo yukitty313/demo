@@ -294,6 +294,7 @@ window.saveShift=function(){
   saveToFirebase(); closeModal(); renderCal(); renderDash();
 };
 window.removeShift=function(id){
+  if(!confirm('このシフトを削除しますか？')) return;
   S.shifts=S.shifts.filter(s=>s.id!==id);
   saveToFirebase();
   if(activeDate) openModal(activeDate);
