@@ -147,6 +147,7 @@ window.renderDash = function(){
   const pf=document.getElementById('pfill');
   pf.style.width=pct+'%'; pf.className='pfill '+cls;
   document.getElementById('limit-label').textContent='上限 '+fms(S.limit);
+  document.getElementById('total-label').textContent=fms(total);
   document.getElementById('yearBadge').textContent=S.year+'年';
 
   const aa=document.getElementById('alertArea');
@@ -739,7 +740,7 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
           <span class="progress-pct" id="pct-label">0%</span>
         </div>
         <div class="pbar"><div class="pfill ok" id="pfill" style="width:0%"></div></div>
-        <div class="progress-footer"><span>¥0</span><span id="limit-label">上限 ¥1,230,000</span></div>
+        <div class="progress-footer"><span id="total-label">¥0</span><span id="limit-label">上限 ¥1,230,000</span></div>
       </div>
       <div class="month-list-label">月別収入</div>
       <div class="month-list" id="monthRow"></div>
