@@ -55,7 +55,13 @@ function startListening(){
     }
     renderDash();
     if(document.getElementById('tab-cal').style.display !== 'none') renderCal();
-    if(document.getElementById('tab-salary').style.display !== 'none') renderSalaryTab();
+    // 給与額タブ: salary-inputにフォーカス中は再描画しない
+    if(document.getElementById('tab-salary').style.display !== 'none'){
+      const focused = document.activeElement;
+      if(!focused || !focused.classList.contains('salary-input')){
+        renderSalaryTab();
+      }
+    }
     if(document.getElementById('tab-cfg').style.display !== 'none') renderWageList();
   }, e => { console.error('db error', e); });
 }
@@ -272,7 +278,7 @@ window.renderSalaryTab = function(){
           id="sal-${mo}"
           placeholder="${shiftAmt > 0 ? Math.round(shiftAmt).toLocaleString()+'（自動計算）' : '未入力'}"
           value="${hasEntry ? sal : ''}"
-          onchange="onSalaryChange(${mo}, this.value)"
+          onblur="onSalaryChange(${mo}, this.value)"
         >
       </div>
       <div class="salary-status">
@@ -284,6 +290,12 @@ window.renderSalaryTab = function(){
     </div>`;
   }
   document.getElementById('salaryList').innerHTML = html;
+
+  // フォーカス中のinputは値を復元しない（上書き防止）
+  const focused = document.activeElement;
+  if(focused && focused.classList.contains('salary-input')){
+    focused.value = focused.value; // 何もしない（再描画後も保持）
+  }
 
   // 年間集計
   let totalActual=0, totalAuto=0, countActual=0, countAuto=0;
