@@ -29,8 +29,9 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 const DATA_REF = 'shared/data';
 
-let S = { shifts:[], wages:[{start:'2026/1/1',end:'',rate:1120}], limit:1230000, year:2026 };
-let calYear=2026, calMonth=0, activeDate=null, chartInst=null;
+// salaries: { "2026/01": 120000, "2026/02": 115000, ... }
+let S = { shifts:[], wages:[{start:'2026/1/1',end:'',rate:1120}], limit:1230000, year:2026, salaries:{} };
+let calYear=2026, calMonth=0, activeDate=null;
 let dbUnsubscribe = null;
 
 function saveToFirebase(){
@@ -49,11 +50,13 @@ function startListening(){
       const remote = snap.val();
       if(remote.shifts) remote.shifts = Object.values(remote.shifts);
       if(remote.wages)  remote.wages  = Object.values(remote.wages);
+      if(!remote.salaries) remote.salaries = {};
       Object.assign(S, remote);
     }
     renderDash();
     if(document.getElementById('tab-cal').style.display !== 'none') renderCal();
-    if(document.getElementById('tab-wage').style.display !== 'none') renderWageList();
+    if(document.getElementById('tab-salary').style.display !== 'none') renderSalaryTab();
+    if(document.getElementById('tab-cfg').style.display !== 'none') renderWageList();
   }, e => { console.error('db error', e); });
 }
 
@@ -98,6 +101,7 @@ function fm(n){ return '¥'+Math.round(n).toLocaleString('ja-JP')+'円'; }
 function fms(n){ return '¥'+Math.round(n).toLocaleString('ja-JP'); }
 function dateKey(y,mo,d){ return `${y}/${String(mo+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`; }
 function uid(){ return Math.random().toString(36).slice(2,9); }
+function salaryKey(y,mo){ return `${y}/${String(mo+1).padStart(2,'0')}`; }
 
 function wageFor(ds){
   const dt=pd(ds); if(!dt) return 1000;
@@ -117,11 +121,30 @@ function calcHours(sh){
   const st=pt(sh.start),et=pt(sh.end); if(st===null||et===null) return 0;
   let m=et-st; if(m<0)m+=1440; m-=(sh.breakMin||0); return Math.max(0,m/60);
 }
+
+// 月の実効金額: 給与入力があればそちら優先、なければシフト自動計算
+function effectiveMonthAmt(year, mo) {
+  const key = salaryKey(year, mo);
+  const sal = S.salaries && S.salaries[key];
+  if(sal !== undefined && sal !== null && sal !== '') return Number(sal);
+  // シフト自動計算
+  let total = 0;
+  for(const s of S.shifts){
+    const dt=pd(s.date); if(!dt||dt.getFullYear()!==year||dt.getMonth()!==mo) continue;
+    total += calcShift(s);
+  }
+  return total;
+}
+
 function monthlyData(){
   const amt=Array(12).fill(0), hrs=Array(12).fill(0);
+  for(let mo=0;mo<12;mo++){
+    amt[mo] = effectiveMonthAmt(S.year, mo);
+  }
+  // 時間はシフトから（給与入力の有無に関わらず表示用）
   for(const s of S.shifts){
     const dt=pd(s.date); if(!dt||dt.getFullYear()!==S.year) continue;
-    const mo=dt.getMonth(); amt[mo]+=calcShift(s); hrs[mo]+=calcHours(s);
+    const mo=dt.getMonth(); hrs[mo]+=calcHours(s);
   }
   return{amt,hrs};
 }
@@ -165,13 +188,17 @@ window.renderDash = function(){
   document.getElementById('monthRow').innerHTML=mn.map((n,i)=>{
     const isCur=i===curMo&&now.getFullYear()===S.year;
     const hasData=amt[i]>0;
-    const pct=Math.round(amt[i]/maxAmt*100);
+    const pct2=Math.round(amt[i]/maxAmt*100);
+    const hasSalary = S.salaries && S.salaries[salaryKey(S.year,i)] !== undefined && S.salaries[salaryKey(S.year,i)] !== null && S.salaries[salaryKey(S.year,i)] !== '';
     return `<div class="month-card ${isCur?'cur':''} ${hasData?'has-data':''}" onclick="jumpMonth(${i})">
-      <div class="mc-bg" style="width:${pct}%"></div>
+      <div class="mc-bg" style="width:${pct2}%"></div>
       <div class="mname">${n}</div>
       <div class="mamt ${hasData?'':'zero'}" style="flex:1;padding:0 8px">${fms(amt[i])}</div>
       ${hasData
-        ? `<div class="mc-sub"><span class="mc-hrs-badge">${hrs[i].toFixed(1)}h</span><span class="mc-days-badge">${days[i]}日</span></div>`
+        ? `<div class="mc-sub">
+            ${hasSalary ? '<span class="mc-salary-badge">実額</span>' : `<span class="mc-hrs-badge">${hrs[i].toFixed(1)}h</span>`}
+            ${!hasSalary ? `<span class="mc-days-badge">${days[i]}日</span>` : ''}
+          </div>`
         : `<span class="mc-zero">—</span>`
       }
     </div>`;
@@ -216,7 +243,88 @@ window.calPrev=function(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} re
 window.calNext=function(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); };
 window.jumpMonth=function(m){ calYear=S.year; calMonth=m; showTab('cal'); };
 
-const ITEM_H=44;
+// ─── 給与額タブ ───────────────────────────────────────
+window.renderSalaryTab = function(){
+  const mn=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const now = new Date();
+  let html = '';
+  for(let mo=0;mo<12;mo++){
+    const key = salaryKey(S.year, mo);
+    const sal = S.salaries && S.salaries[key] !== undefined && S.salaries[key] !== null && S.salaries[key] !== '' ? S.salaries[key] : '';
+    // シフト計算額
+    let shiftAmt = 0;
+    for(const s of S.shifts){
+      const dt=pd(s.date); if(!dt||dt.getFullYear()!==S.year||dt.getMonth()!==mo) continue;
+      shiftAmt += calcShift(s);
+    }
+    const isCur = mo===now.getMonth()&&now.getFullYear()===S.year;
+    const hasEntry = sal !== '';
+    html += `<div class="salary-row ${isCur?'cur':''}">
+      <div class="salary-month-label">
+        <span class="salary-mname">${mn[mo]}</span>
+        ${isCur ? '<span class="cur-badge">今月</span>' : ''}
+      </div>
+      <div class="salary-input-wrap">
+        <span class="yen-prefix">¥</span>
+        <input
+          type="number"
+          class="salary-input"
+          id="sal-${mo}"
+          placeholder="${shiftAmt > 0 ? Math.round(shiftAmt).toLocaleString()+'（自動計算）' : '未入力'}"
+          value="${hasEntry ? sal : ''}"
+          onchange="onSalaryChange(${mo}, this.value)"
+        >
+      </div>
+      <div class="salary-status">
+        ${hasEntry
+          ? `<span class="badge-actual">実額入力</span>`
+          : (shiftAmt > 0 ? `<span class="badge-auto">自動計算 ${fms(shiftAmt)}</span>` : `<span class="badge-none">—</span>`)
+        }
+      </div>
+    </div>`;
+  }
+  document.getElementById('salaryList').innerHTML = html;
+
+  // 年間集計
+  let totalActual=0, totalAuto=0, countActual=0, countAuto=0;
+  for(let mo=0;mo<12;mo++){
+    const key=salaryKey(S.year,mo);
+    const sal=S.salaries&&S.salaries[key]!==undefined&&S.salaries[key]!==null&&S.salaries[key]!==''?Number(S.salaries[key]):null;
+    let shiftAmt=0;
+    for(const s of S.shifts){const dt=pd(s.date);if(!dt||dt.getFullYear()!==S.year||dt.getMonth()!==mo)continue;shiftAmt+=calcShift(s);}
+    if(sal!==null){totalActual+=sal;countActual++;}
+    else if(shiftAmt>0){totalAuto+=shiftAmt;countAuto++;}
+  }
+  const grandTotal=totalActual+totalAuto;
+  document.getElementById('salaryYearTotal').textContent=fms(grandTotal)+'円';
+  document.getElementById('salaryActualNote').textContent=`実額入力: ${countActual}ヶ月 / 自動計算: ${countAuto}ヶ月`;
+};
+
+window.onSalaryChange = function(mo, val){
+  if(!S.salaries) S.salaries={};
+  const key = salaryKey(S.year, mo);
+  const num = val===''||val===null ? null : Number(val);
+  if(num===null||isNaN(num)||val===''){
+    delete S.salaries[key];
+  } else {
+    S.salaries[key] = num;
+  }
+  saveToFirebase();
+  renderDash();
+  // バッジだけ更新
+  renderSalaryTab();
+};
+
+window.clearSalary = function(mo){
+  if(!S.salaries) return;
+  const key = salaryKey(S.year, mo);
+  delete S.salaries[key];
+  saveToFirebase();
+  renderDash();
+  renderSalaryTab();
+};
+// ──────────────────────────────────────────────────────
+
 const HOURS=Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
 function hoursOpts(sel){ return HOURS.map(h=>`<option value="${h}" ${h===sel?'selected':''}>${h}</option>`).join(''); }
 function minsOpts(sel){ const M=['00','05','10','15','20','25','30','35','40','45','50','55']; return M.map(m=>`<option value="${m}" ${m===sel?'selected':''}>${m}</option>`).join(''); }
@@ -394,18 +502,19 @@ window.setYear=function(){
 };
 window.clearAll=function(){
   if(confirm('全データを削除しますか？この操作は取り消せません。')){
-    S={shifts:[],wages:[{start:'2026/1/1',end:'',rate:1120}],limit:1230000,year:2026};
+    S={shifts:[],wages:[{start:'2026/1/1',end:'',rate:1120}],limit:1230000,year:2026,salaries:{}};
     calYear=2026;calMonth=0;
-    saveToFirebase();renderDash();renderCal();renderWageList();
+    saveToFirebase();renderDash();renderCal();renderWageList();renderSalaryTab();
   }
 };
 
 window.showTab=function(t){
-  ['dash','cal','wage','cfg'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'':'none';});
-  document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.toggle('active',['dash','cal','wage','cfg'][i]===t);});
-  if(t==='dash') renderDash();
-  if(t==='cal')  renderCal();
-  if(t==='wage') renderWageList();
+  ['dash','cal','salary','cfg'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'':'none';});
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.toggle('active',['dash','cal','salary','cfg'][i]===t);});
+  if(t==='dash')   renderDash();
+  if(t==='cal')    renderCal();
+  if(t==='salary') renderSalaryTab();
+  if(t==='cfg')    renderWageList();
 };
 
 document.addEventListener('keydown',e=>{
@@ -541,7 +650,6 @@ calMonth=new Date().getMonth();
   --item-h:44px;--visible:5;
 }
 
-/* ===== スマホのみ背景画像 ===== */
 @media (max-width: 760px) {
   body {
     background-color: transparent;
@@ -607,7 +715,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 .header-left{display:flex;align-items:center;gap:10px}
 .header-title{font-size:13px;font-weight:900;color:#ffffff;font-family:'Orbitron',sans-serif;display:flex;align-items:center;gap:8px;letter-spacing:2px;text-shadow:0 0 10px #00aaff,0 0 20px #00aaff,0 0 40px #00aaff60}
-.header-icon{width:26px;height:26px;background:rgba(255,255,255,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
 .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .year-badge{font-size:12px;font-weight:700;background:#00aaff15;color:#ffffff;border:1px solid #00aaff70;padding:3px 12px;border-radius:4px;font-family:'Quantico',sans-serif;box-shadow:0 0 10px #00aaff50,inset 0 0 6px #00aaff20;text-shadow:0 0 8px #00aaff}
 .logout-btn{font-size:11px;font-weight:700;background:#00aaff15;color:#ffffff;border:1px solid #00aaff50;border-radius:5px;padding:4px 10px;cursor:pointer;font-family:'Orbitron',sans-serif;box-shadow:0 0 8px #00aaff30}
@@ -656,8 +763,32 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .mc-sub{display:flex;gap:5px;align-items:center;flex-shrink:0}
 .mc-hrs-badge{font-size:11px;font-weight:600;color:#ffffff;font-family:'Quantico',sans-serif;background:#00aaff20;padding:2px 7px;border-radius:3px;white-space:nowrap;border:1px solid #00aaff60;box-shadow:0 0 10px #00aaff50;text-shadow:0 0 8px #00aaff,0 0 16px #00aaff}
 .mc-days-badge{font-size:11px;font-weight:600;color:#aaddff;font-family:'Quantico',sans-serif;background:#00aaff12;padding:2px 7px;border-radius:3px;white-space:nowrap;border:1px solid #00aaff35}
+.mc-salary-badge{font-size:11px;font-weight:600;color:#00ddaa;font-family:'Quantico',sans-serif;background:#00ddaa15;padding:2px 7px;border-radius:3px;white-space:nowrap;border:1px solid #00ddaa50;box-shadow:0 0 8px #00ddaa30}
 .mc-zero{font-size:11px;color:var(--text3);flex-shrink:0}
 .month-list-label{font-size:9px;font-weight:700;color:#0099ff60;margin-bottom:8px;letter-spacing:2px;font-family:'Orbitron',sans-serif}
+
+/* ── 給与額タブ ── */
+.salary-year-card{background:var(--surface);border:1px solid #00ddaa55;border-radius:var(--radius);padding:14px 18px;margin-bottom:14px;box-shadow:0 0 20px #00ddaa18,inset 0 0 16px #00ddaa0a}
+.salary-year-total{font-family:'Quantico',sans-serif;font-size:22px;font-weight:700;color:#00ddaa;text-shadow:0 0 12px #00ddaa,0 0 24px #00ddaa80;letter-spacing:1px}
+.salary-year-note{font-size:11px;color:#00ddaa70;margin-top:4px;font-family:'Rajdhani',sans-serif}
+.salary-hint{font-size:11px;color:var(--text3);margin-bottom:10px;padding:8px 12px;background:#00aaff08;border-radius:var(--radius-xs);border-left:2px solid #00aaff30;line-height:1.6}
+.salary-list{display:flex;flex-direction:column;gap:6px;}
+.salary-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid #00aaff25;border-left:2px solid #00aaff50;border-radius:var(--radius-sm);transition:all .15s;box-shadow:0 0 8px #00aaff10}
+.salary-row.cur{border-color:#00aaff;border-left-color:#00ddff;background:#0a1e35;box-shadow:0 0 16px #00aaff30,inset 0 0 8px #00aaff0a}
+.salary-month-label{display:flex;align-items:center;gap:6px;min-width:52px}
+.salary-mname{font-size:12px;font-weight:700;color:#00aaff80;font-family:'Orbitron',sans-serif}
+.salary-row.cur .salary-mname{color:#ffffff;text-shadow:0 0 8px #00ddff}
+.cur-badge{font-size:9px;font-weight:700;background:#00aaff20;color:#00ddff;border:1px solid #00aaff60;border-radius:3px;padding:1px 5px;font-family:'Orbitron',sans-serif}
+.salary-input-wrap{flex:1;display:flex;align-items:center;gap:4px;background:var(--surface2);border:1.5px solid #00aaff30;border-radius:var(--radius-xs);padding:0 8px;transition:border .15s}
+.salary-input-wrap:focus-within{border-color:#00aaff;box-shadow:0 0 0 2px #00aaff20}
+.yen-prefix{font-size:13px;font-weight:700;color:#00aaff60;font-family:'Quantico',sans-serif}
+.salary-input{flex:1;background:transparent;border:none;outline:none;font-size:14px;font-weight:700;color:#ffffff;font-family:'Quantico',sans-serif;padding:7px 0;min-width:0}
+.salary-input::placeholder{color:#00aaff25;font-size:11px;font-weight:400;font-family:'Noto Sans JP',sans-serif}
+.salary-status{flex-shrink:0;min-width:80px;text-align:right}
+.badge-actual{font-size:10px;font-weight:700;color:#00ddaa;background:#00ddaa15;border:1px solid #00ddaa50;border-radius:3px;padding:2px 7px;font-family:'Orbitron',sans-serif;box-shadow:0 0 6px #00ddaa20}
+.badge-auto{font-size:10px;color:#00aaff80;font-family:'Quantico',sans-serif;white-space:nowrap}
+.badge-none{font-size:12px;color:#00aaff25;font-family:'Quantico',sans-serif}
+
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .cal-nav-title{font-size:13px;font-weight:900;color:#66ccff;font-family:'Orbitron',sans-serif;letter-spacing:2px}
 .cal-nav-btn{background:var(--surface);border:1px solid var(--border);border-radius:6px;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;color:#0099ff;font-weight:700}
@@ -752,10 +883,11 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
     <div class="tabs">
       <button class="tab active" onclick="showTab('dash')">ダッシュボード</button>
       <button class="tab" onclick="showTab('cal')">カレンダー</button>
-      <button class="tab" onclick="showTab('wage')">時給設定</button>
+      <button class="tab" onclick="showTab('salary')">給与額</button>
       <button class="tab" onclick="showTab('cfg')">設定</button>
     </div>
 
+    <!-- ダッシュボード -->
     <div id="tab-dash" style="margin-top:16px">
       <div id="alertArea"></div>
       <div class="metric-grid">
@@ -776,6 +908,7 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
       <div class="month-list" id="monthRow"></div>
     </div>
 
+    <!-- カレンダー -->
     <div id="tab-cal" style="display:none;margin-top:16px">
       <div class="cal-nav">
         <button class="cal-nav-btn" onclick="calPrev()">&#8249;</button>
@@ -795,7 +928,23 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
       <div class="cal-summary" id="calSummary"></div>
     </div>
 
-    <div id="tab-wage" style="display:none;margin-top:16px">
+    <!-- 給与額タブ -->
+    <div id="tab-salary" style="display:none;margin-top:16px">
+      <div class="salary-year-card">
+        <div style="font-size:10px;font-weight:700;color:#00ddaa70;font-family:'Orbitron',sans-serif;letter-spacing:1px;margin-bottom:6px">年間合計（実績ベース）</div>
+        <div class="salary-year-total" id="salaryYearTotal">¥0</div>
+        <div class="salary-year-note" id="salaryActualNote">実額入力: 0ヶ月 / 自動計算: 0ヶ月</div>
+      </div>
+      <div class="salary-hint">
+        💡 振り込まれた実際の給与額を月ごとに入力してください。<br>
+        入力がない月はシフトからの自動計算額が使われます。
+      </div>
+      <div class="salary-list" id="salaryList"></div>
+    </div>
+
+    <!-- 設定タブ（時給設定 + 設定を統合） -->
+    <div id="tab-cfg" style="display:none;margin-top:16px">
+      <!-- 時給設定セクション -->
       <div class="card">
         <div class="card-title">時給を追加</div>
         <div class="row2" style="margin-bottom:10px">
@@ -811,9 +960,8 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
         <div class="card-title">設定済み時給</div>
         <div id="wageList"></div>
       </div>
-    </div>
 
-    <div id="tab-cfg" style="display:none;margin-top:16px">
+      <!-- その他設定セクション -->
       <div class="card" style="padding:14px 16px">
         <div class="cfg-row">
           <div class="cfg-label">年収上限</div>
