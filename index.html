@@ -516,8 +516,22 @@ window.doRefresh = function(){
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
   btn.disabled = true;
-  startListening();
-  setTimeout(()=>{ btn.classList.remove('spinning'); btn.disabled=false; }, 800);
+  get(ref(db, DATA_REF)).then(snap => {
+    if(snap.exists()){
+      const remote = snap.val();
+      if(remote.shifts) remote.shifts = Object.values(remote.shifts);
+      if(remote.wages)  remote.wages  = Object.values(remote.wages);
+      if(!remote.salaries) remote.salaries = {};
+      Object.assign(S, remote);
+    }
+    renderDash();
+    renderCal();
+    renderSalaryTab();
+    renderWageList();
+  }).catch(e => console.error('refresh error', e))
+    .finally(() => {
+      setTimeout(()=>{ btn.classList.remove('spinning'); btn.disabled=false; }, 400);
+    });
 };
 
 window.clearAll=function(){
@@ -803,8 +817,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .salary-mname{font-size:12px;font-weight:700;color:#00aaff80;font-family:'Orbitron',sans-serif}
 .salary-row.cur .salary-mname{color:#ffffff;text-shadow:0 0 8px #00ddff}
 .cur-badge{font-size:9px;font-weight:700;background:#00aaff20;color:#00ddff;border:1px solid #00aaff60;border-radius:3px;padding:1px 5px;font-family:'Orbitron',sans-serif}
-.salary-input-wrap{flex:1;display:flex;align-items:center;gap:4px;border-bottom:1px solid #00aaff30;padding:0 4px;transition:border .15s}
-.salary-input-wrap:focus-within{border-bottom-color:#00aaff;}
+.salary-input-wrap{flex:1;display:flex;align-items:center;gap:4px;padding:0 4px;}
 .yen-prefix{font-size:13px;font-weight:700;color:#00aaff50;font-family:'Quantico',sans-serif}
 .salary-input{flex:1;background:transparent;border:none;outline:none;font-size:14px;font-weight:700;color:#ffffff;font-family:'Quantico',sans-serif;padding:6px 0;min-width:0}
 .salary-input::placeholder{color:#00aaff20;font-size:12px;font-weight:400;font-family:'Noto Sans JP',sans-serif}
