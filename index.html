@@ -500,6 +500,14 @@ window.setYear=function(){
     document.getElementById('yearBadge').textContent=v+'年';
   }
 };
+window.doRefresh = function(){
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  startListening();
+  setTimeout(()=>{ btn.classList.remove('spinning'); btn.disabled=false; }, 800);
+};
+
 window.clearAll=function(){
   if(confirm('全データを削除しますか？この操作は取り消せません。')){
     S={shifts:[],wages:[{start:'2026/1/1',end:'',rate:1120}],limit:1230000,year:2026,salaries:{}};
@@ -717,6 +725,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .header-title{font-size:13px;font-weight:900;color:#ffffff;font-family:'Orbitron',sans-serif;display:flex;align-items:center;gap:8px;letter-spacing:2px;text-shadow:0 0 10px #00aaff,0 0 20px #00aaff,0 0 40px #00aaff60}
 .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .year-badge{font-size:12px;font-weight:700;background:#00aaff15;color:#ffffff;border:1px solid #00aaff70;padding:3px 12px;border-radius:4px;font-family:'Quantico',sans-serif;box-shadow:0 0 10px #00aaff50,inset 0 0 6px #00aaff20;text-shadow:0 0 8px #00aaff}
+.refresh-btn{font-size:18px;font-weight:700;background:#00aaff15;color:#00ddff;border:1px solid #00aaff50;border-radius:5px;padding:4px 9px;cursor:pointer;line-height:1;box-shadow:0 0 8px #00aaff30;transition:all .2s}
+.refresh-btn:hover{background:#00aaff30;transform:rotate(30deg)}
+.refresh-btn.spinning{animation:spin .8s linear 1;pointer-events:none}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .logout-btn{font-size:11px;font-weight:700;background:#00aaff15;color:#ffffff;border:1px solid #00aaff50;border-radius:5px;padding:4px 10px;cursor:pointer;font-family:'Orbitron',sans-serif;box-shadow:0 0 8px #00aaff30}
 .logout-btn:hover{background:rgba(255,255,255,.3)}
 
@@ -875,16 +887,19 @@ input:focus,select:focus{border-color:#0099ff;box-shadow:0 0 0 3px rgba(0,153,25
     </div>
     <div class="header-right">
       <span class="year-badge" id="yearBadge">2026年</span>
-      <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="refresh-btn" id="refreshBtn" onclick="doRefresh()" title="更新">&#8635;</button>
+        <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+      </div>
     </div>
   </div>
 
   <div class="container">
     <div class="tabs">
-      <button class="tab active" onclick="showTab('dash')">ダッシュボード</button>
-      <button class="tab" onclick="showTab('cal')">カレンダー</button>
-      <button class="tab" onclick="showTab('salary')">給与額</button>
-      <button class="tab" onclick="showTab('cfg')">設定</button>
+      <button class="tab active" data-tab="dash" onclick="showTab('dash')">ダッシュボード</button>
+      <button class="tab" data-tab="cal" onclick="showTab('cal')">カレンダー</button>
+      <button class="tab" data-tab="salary" onclick="showTab('salary')">給与額</button>
+      <button class="tab" data-tab="cfg" onclick="showTab('cfg')">設定</button>
     </div>
 
     <!-- ダッシュボード -->
