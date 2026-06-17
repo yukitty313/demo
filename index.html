@@ -202,8 +202,9 @@ window.renderDash = function(){
       <div class="mamt ${hasData?'':'zero'}" style="flex:1;padding:0 8px">${fms(amt[i])}</div>
       ${hasData
         ? `<div class="mc-sub">
-            ${hasSalary ? '<span class="mc-salary-badge">実額</span>' : `<span class="mc-hrs-badge">${hrs[i].toFixed(1)}h</span>`}
-            ${!hasSalary ? `<span class="mc-days-badge">${days[i]}日</span>` : ''}
+            ${hasSalary ? '<span class="mc-salary-badge">実額</span>' : ''}
+            <span class="mc-hrs-badge">${hrs[i].toFixed(1)}h</span>
+            <span class="mc-days-badge">${days[i]}日</span>
           </div>`
         : `<span class="mc-zero">—</span>`
       }
@@ -804,7 +805,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .mc-days-badge{font-size:11px;font-weight:600;color:#aaddff;font-family:'Quantico',sans-serif;background:#00aaff12;padding:2px 7px;border-radius:3px;white-space:nowrap;border:1px solid #00aaff35}
 .mc-salary-badge{font-size:11px;font-weight:600;color:#00ddaa;font-family:'Quantico',sans-serif;background:#00ddaa15;padding:2px 7px;border-radius:3px;white-space:nowrap;border:1px solid #00ddaa50;box-shadow:0 0 8px #00ddaa30}
 .mc-zero{font-size:11px;color:var(--text3);flex-shrink:0}
-.month-list-label{font-size:9px;font-weight:700;color:#0099ff60;margin-bottom:8px;letter-spacing:2px;font-family:'Orbitron',sans-serif}
+.month-list-label{font-size:9px;font-weight:700;color:#aaddff90;margin-bottom:8px;letter-spacing:2px;font-family:'Orbitron',sans-serif}
 
 /* ── 給与額タブ ── */
 .salary-year-card{background:var(--surface);border:1px solid #00ddaa55;border-radius:var(--radius);padding:14px 18px;margin-bottom:14px;box-shadow:0 0 20px #00ddaa18,inset 0 0 16px #00ddaa0a}
