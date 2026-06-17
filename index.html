@@ -276,15 +276,15 @@ window.renderSalaryTab = function(){
           type="number"
           class="salary-input"
           id="sal-${mo}"
-          placeholder="${shiftAmt > 0 ? Math.round(shiftAmt).toLocaleString()+'（自動計算）' : '未入力'}"
+          placeholder="${shiftAmt > 0 ? Math.round(shiftAmt).toLocaleString() : '未入力'}"
           value="${hasEntry ? sal : ''}"
           onblur="onSalaryChange(${mo}, this.value)"
         >
       </div>
       <div class="salary-status">
         ${hasEntry
-          ? `<span class="badge-actual">実額入力</span>`
-          : (shiftAmt > 0 ? `<span class="badge-auto">自動計算 ${fms(shiftAmt)}</span>` : `<span class="badge-none">—</span>`)
+          ? `<span class="badge-actual">実額</span>`
+          : (shiftAmt > 0 ? `<span class="badge-auto">${fms(shiftAmt)}</span>` : `<span class="badge-none">—</span>`)
         }
       </div>
     </div>`;
@@ -803,14 +803,14 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .salary-mname{font-size:12px;font-weight:700;color:#00aaff80;font-family:'Orbitron',sans-serif}
 .salary-row.cur .salary-mname{color:#ffffff;text-shadow:0 0 8px #00ddff}
 .cur-badge{font-size:9px;font-weight:700;background:#00aaff20;color:#00ddff;border:1px solid #00aaff60;border-radius:3px;padding:1px 5px;font-family:'Orbitron',sans-serif}
-.salary-input-wrap{flex:1;display:flex;align-items:center;gap:4px;background:var(--surface2);border:1.5px solid #00aaff30;border-radius:var(--radius-xs);padding:0 8px;transition:border .15s}
-.salary-input-wrap:focus-within{border-color:#00aaff;box-shadow:0 0 0 2px #00aaff20}
-.yen-prefix{font-size:13px;font-weight:700;color:#00aaff60;font-family:'Quantico',sans-serif}
-.salary-input{flex:1;background:transparent;border:none;outline:none;font-size:14px;font-weight:700;color:#ffffff;font-family:'Quantico',sans-serif;padding:7px 0;min-width:0}
-.salary-input::placeholder{color:#00aaff25;font-size:11px;font-weight:400;font-family:'Noto Sans JP',sans-serif}
-.salary-status{flex-shrink:0;min-width:80px;text-align:right}
+.salary-input-wrap{flex:1;display:flex;align-items:center;gap:4px;border-bottom:1px solid #00aaff30;padding:0 4px;transition:border .15s}
+.salary-input-wrap:focus-within{border-bottom-color:#00aaff;}
+.yen-prefix{font-size:13px;font-weight:700;color:#00aaff50;font-family:'Quantico',sans-serif}
+.salary-input{flex:1;background:transparent;border:none;outline:none;font-size:14px;font-weight:700;color:#ffffff;font-family:'Quantico',sans-serif;padding:6px 0;min-width:0}
+.salary-input::placeholder{color:#00aaff20;font-size:12px;font-weight:400;font-family:'Noto Sans JP',sans-serif}
+.salary-status{flex-shrink:0;min-width:64px;text-align:right}
 .badge-actual{font-size:10px;font-weight:700;color:#00ddaa;background:#00ddaa15;border:1px solid #00ddaa50;border-radius:3px;padding:2px 7px;font-family:'Orbitron',sans-serif;box-shadow:0 0 6px #00ddaa20}
-.badge-auto{font-size:10px;color:#00aaff80;font-family:'Quantico',sans-serif;white-space:nowrap}
+.badge-auto{font-size:11px;color:#00aaff60;font-family:'Quantico',sans-serif;white-space:nowrap}
 .badge-none{font-size:12px;color:#00aaff25;font-family:'Quantico',sans-serif}
 
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
