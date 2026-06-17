@@ -107,7 +107,7 @@ function fm(n){ return '¥'+Math.round(n).toLocaleString('ja-JP')+'円'; }
 function fms(n){ return '¥'+Math.round(n).toLocaleString('ja-JP'); }
 function dateKey(y,mo,d){ return `${y}/${String(mo+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`; }
 function uid(){ return Math.random().toString(36).slice(2,9); }
-function salaryKey(y,mo){ return `${y}/${String(mo+1).padStart(2,'0')}`; }
+function salaryKey(y,mo){ return `${y}-${String(mo+1).padStart(2,'0')}`; }
 
 function wageFor(ds){
   const dt=pd(ds); if(!dt) return 1000;
